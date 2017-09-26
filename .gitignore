@@ -107,3 +107,10 @@ venv.bak/
 .pdf
 .csv
 .dat
+
+# model
+*.model
+
+# data folder
+data/
+data/*/
