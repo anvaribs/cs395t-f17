@@ -40,7 +40,7 @@ def setup_to_transfer_learn(model, base_model):
     layer.trainable = False
   model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])    #just categorical_crossentropy,  maybe could add sparse_ to it
   # A target array with shape (32, 70) was passed for an output of shape (None, 0) while using as loss `categorical_crossentropy`. This loss expects targets to have the same shape as the output.
-  #   Your model has an output of shape (10,), however, your outputs have dimension (1,). 
+  #   Your model has an output of shape (10,), however, your outputs have dimension (1,).
   #   You probably want to convert your y_train to categorical one-hot vectors, ie, via keras.utils.np_utils.to_categorical.
 
 
@@ -59,9 +59,9 @@ def add_new_last_layer(base_model, nb_classes):
 
 
   #code.interact(local=locals())
-  #print("current output Lastlayer x.shape: ")     
+  #print("current output Lastlayer x.shape: ")
   #print(x)				   #Tensor("mixed10/concat:0", shape=(?, ?, ?, 2048), dtype=float32)
-  #print(x.shape)			   #(?, ?, ?, 2048)	
+  #print(x.shape)			   #(?, ?, ?, 2048)
 
   x = GlobalAveragePooling2D()(x)          #GlobalAveragePooling2D converts the MxNxC tensor output into a 1xC tensor where C is the # of channels.
   x = Dense(FC_SIZE, activation='relu')(x) #new FC layer, random init  a fully-connected Dense layer of size 1024
@@ -70,9 +70,9 @@ def add_new_last_layer(base_model, nb_classes):
   #print(x.shape)                           #(?, 1024)
 
   predictions = Dense(nb_classes, activation='softmax')(x) #new softmax layer on the output to squeeze the values between [0,1]
-  #print("predictions.shape: ")             
+  #print("predictions.shape: ")
   print("PREDICTIONS should need to be in [0,1].  nb_classes: ",nb_classes," should be the size of your last layer")
-  print(predictions)                       
+  print(predictions)
   print(predictions.shape)                 #(?, 0)
 
   model = Model(inputs=base_model.input, outputs=predictions)    #UserWarning: Update your `Model` call to the Keras 2 API: `Model(inputs=Tensor("in..., outputs=Tensor("de...)`
@@ -129,17 +129,20 @@ def train(args):
   if os.path.isdir(args.data_dir+"/"+args.input_dir+"_"+args.model_name) == False:
     create_folder_with_classes(args.data_dir,args.data_dir+"/"+args.input_dir,args.input_dir+"_"+args.model_name,args.data_dir+"/"+args.train_file)
 
-  
+
   #take yearbook_valid.csv and generate new validation folder which leaves F/  M/  but within each makes folders for each year present and copies the files over to them!
   if os.path.isdir(args.data_dir+"/"+args.valid_dir+"_"+args.model_name) == False:
     create_folder_with_classes(args.data_dir,args.data_dir+"/"+args.valid_dir,args.valid_dir+"_"+args.model_name,args.data_dir+"/"+args.valid_file)
 
   nb_train_samples = get_nb_files(args.data_dir+"/"+args.input_dir+"_"+args.model_name) #22840
   print("Looking in ", args.data_dir + "/" + args.input_dir+"_"+args.model_name+"/*")
-  nb_classes = len(glob.glob(args.data_dir + "/"+args.input_dir+"_"+args.model_name+"/*"))  #104              #1905 - 2013, you would expect 109, but there is no 1907, 1917, 1918, 1920, 1921 
+  nb_classes = len(glob.glob(args.data_dir + "/"+args.input_dir+"_"+args.model_name+"/*"))  #104              #1905 - 2013, you would expect 109, but there is no 1907, 1917, 1918, 1920, 1921
   nb_val_samples = get_nb_files(args.data_dir+"/"+args.valid_dir+"_"+args.model_name) #5009
   nb_epoch = int(args.nb_epoch)
   batch_size = int(args.batch_size)
+
+  #for now need to force classes of validation to be same of train somehow
+  response_classes = ['1905', '1906', '1908', '1909', '1910', '1911', '1912', '1913', '1914', '1915', '1916', '1919', '1922', '1923', '1924', '1925', '1926', '1927', '1928', '1929', '1930', '1931', '1932', '1933', '1934', '1935', '1936', '1937', '1938', '1939', '1940', '1941', '1942', '1943', '1944', '1945', '1946', '1947', '1948', '1949', '1950', '1951', '1952', '1953', '1954', '1955', '1956', '1957', '1958', '1959', '1960', '1961', '1962', '1963', '1964', '1965', '1966', '1967', '1968', '1969', '1970', '1971', '1972', '1973', '1974', '1975', '1976', '1977', '1978', '1979', '1980', '1981', '1982', '1983', '1984', '1985', '1986', '1987', '1988', '1989', '1990', '1991', '1992', '1993', '1994', '1995', '1996', '1997', '1998', '1999', '2000', '2001', '2002', '2003', '2004', '2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013']
 
   print("nb_train_samples: ",nb_train_samples)
   print("nb_classes: ",nb_classes)
@@ -170,21 +173,23 @@ def train(args):
 
   #flow_from_directory(directory): Takes the path to a directory, and generates batches of augmented/normalized data. Yields batches indefinitely, in an infinite loop.
   #Arguments:
-  #- directory: path to the target directory. 
-  #   It should contain one subdirectory per class. Any PNG, JPG, BMP or PPM images inside each of the subdirectories directory tree will be included in the generator. 
+  #- directory: path to the target directory.
+  #   It should contain one subdirectory per class. Any PNG, JPG, BMP or PPM images inside each of the subdirectories directory tree will be included in the generator.
   #- target_size: tuple of integers (height, width), default: (256, 256). The dimensions to which all images found will be resized.
 
-  #2. Go through Training data and Resize/Batch   , same with Valid data 
-  train_generator = train_datagen.flow_from_directory(    
+  #2. Go through Training data and Resize/Batch   , same with Valid data
+  train_generator = train_datagen.flow_from_directory(
     args.data_dir + "/" +args.input_dir+"_"+args.model_name,
     target_size=(IM_WIDTH, IM_HEIGHT),
     batch_size=batch_size,
+    classes=response_classes
   )
 
   validation_generator = test_datagen.flow_from_directory(
     args.data_dir + "/" + args.valid_dir+"_"+args.model_name,
     target_size=(IM_WIDTH, IM_HEIGHT),
     batch_size=batch_size,
+    classes=response_classes
   )
 
   # setup model
@@ -221,7 +226,7 @@ fine-tune.py:193: UserWarning: Update your `fit_generator` call to the Keras 2 A
  ##  File "//anaconda/envs/tf/lib/python3.6/site-packages/keras/engine/training.py", line 144, in _standardize_input_data
  ##   str(array.shape))
  ##  ValueError: Error when checking target: expected dense_2 to have shape (None, 1) but got array with shape (32, 70)
-  
+
   '''
   File "fine-tune.py", line 209, in train
     class_weight='auto')
@@ -237,13 +242,13 @@ fine-tune.py:193: UserWarning: Update your `fit_generator` call to the Keras 2 A
     ' while using as loss `' + loss.__name__ + '`. '
   ValueError: A target array with shape (32, 70) was passed for an output of shape (None, 0) while using as loss `categorical_crossentropy`. This loss expects targets to have the same shape as the output.
 
-  ''' 
+  '''
 
   # fine-tuning
   setup_to_finetune(model)
 
-  #Doing transfer learning and then fine-tuning, in that order, will ensure a more stable and consistent training. 
-  #This is because the large gradient updates triggered by randomly initialized weights could wreck the learned weights in the convolutional base if not frozen. 
+  #Doing transfer learning and then fine-tuning, in that order, will ensure a more stable and consistent training.
+  #This is because the large gradient updates triggered by randomly initialized weights could wreck the learned weights in the convolutional base if not frozen.
   #Once the last layer has stabilized (transfer learning), then we move onto retraining more layers (fine-tuning).
 
   '''
@@ -289,7 +294,7 @@ def plot_training(history):
 
 
 if __name__=="__main__":
-  #SAMPLE CALLs 
+  #SAMPLE CALLs
   #python fine-tune.py --data_dir="../data/yearbook" --model_name="inceptionv3"         #use training set from data/yearbook/train, new images in data/yearbook/train_inception3
   #python fine-tune.py --data_dir="../data/yearbook" --input_dir="train_sub" --valid_dir="valid_sub" --train_file="yearbook_train_small.txt" --valid_file="yearbook_valid_small.txt" --model_name="inceptionv3"
   a = argparse.ArgumentParser()
@@ -305,7 +310,7 @@ if __name__=="__main__":
   a.add_argument("--plot", action="store_true")
 
   args = a.parse_args()
-  if (not os.path.exists(args.data_dir)): 
+  if (not os.path.exists(args.data_dir)):
     print("directory to data does not exist")
     sys.exit(1)
 
