@@ -84,3 +84,42 @@ cd src &&  python grade.py --DATASET_TYPE=geolocation --type=test
 2. Remove complete data from the data folder.
 3. Add readme.md file in your submission.
 4. Project should be run from the grade.py file as shown in the evaluation step and should be able to generate the test_label file.
+
+
+
+
+
+## cs395proj1_install_notes.txt
+
+STEP A: installing anaconda on ubuntu
+
+https://www.digitalocean.com/community/tutorials/how-to-install-the-anaconda-python-distribution-on-ubuntu-16-04
+
+1) curl -O https://repo.continuum.io/archive/Anaconda3-4.2.0-Linux-x86_64.sh
+2) bash Anaconda3-4.2.0-Linux-x86_64.sh
+3) source ~/.bashrc
+
+
+STEP B: create conda environment and get all the dependencies
+
+4) conda create --name tf python=3
+5) source activate tf
+6) conda install keras
+7) conda install matplotlib
+8) conda install pandas
+9) conda install -c anaconda tensorflow-gpu
+
+STEP C: Train our models using GPUs with "screen" so that you may leave the process running in the background
+##https://askubuntu.com/questions/8653/how-to-keep-processes-running-after-ending-ssh-session
+
+10) screen -S diego395
+11) CUDA_VISIBLE_DEVICES=3 python fine-tune.py --data_dir="../data/yearbook" --input_dir="train"
+--valid_dir="valid" --train_file="yearbook_train.txt" --valid_file="yearbook_valid.txt"
+--model_name="inceptionv3" > outputresults.xt
+
+
+ctrl-A ctrl-D  #to detach process and leave it running in background
+screen -r diego395   #to get back to screen session to check on process
+
+nvidia-smi  # to see gpu usage on microdeep
+top         # to see cpu usage on microdeep
