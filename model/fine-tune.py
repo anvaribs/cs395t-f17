@@ -111,6 +111,7 @@ def create_folder_with_classes(basef,input_folder,output_folder,trainfile):
     for i in imgs:
       assert(os.path.isfile(input_folder+"/F/"+i))
       copyfile(input_folder+"/F/"+i, curfolder+"/"+i)
+      assert(os.path.isfile(curfolder+"/"+i))
 
   #make men folders
   menyears = sorted(train[train['gender']=='M']["year"].unique())
@@ -122,6 +123,8 @@ def create_folder_with_classes(basef,input_folder,output_folder,trainfile):
     for i in imgs:
       assert (os.path.isfile(input_folder+"/M/"+i))
       copyfile(input_folder+"/M/"+i, curfolder+"/"+i)
+      assert(os.path.isfile(curfolder+"/"+i))
+
 
 def train(args):
   """Use transfer learning and fine-tuning to train a network on a new dataset"""
