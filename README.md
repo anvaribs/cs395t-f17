@@ -1,5 +1,5 @@
 # Yearbook/ Geolocation
-This is a starter fore for implementing yearbook or geolocation project.
+This is a starter for implementing yearbook or geolocation project.
 
 ## Dependencies
  * python (tested with python2.7)
