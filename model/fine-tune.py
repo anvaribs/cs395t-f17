@@ -103,6 +103,8 @@ def create_folder_with_classes(basef,input_folder,output_folder,trainfile):
   os.system("mkdir "+basef+"/"+output_folder)
   #make women folders and copy over file
   womenyears = sorted(train[train['gender']=='F']["year"].unique())
+  
+  count_duplicate = 0
   for y in womenyears:
     curfolder = basef+"/"+output_folder+"/"+str(y)
     if os.path.isdir(curfolder) == False:
@@ -110,9 +112,11 @@ def create_folder_with_classes(basef,input_folder,output_folder,trainfile):
     imgs = train[(train["year"] == y) & (train["gender"] == 'F')]["imagepath"]
     for i in imgs:
       assert(os.path.isfile(input_folder+"/F/"+i))
+      if (os.path.isfile(curfolder+"/"+i)):
+        count_duplicate += 1
       copyfile(input_folder+"/F/"+i, curfolder+"/"+i)
       assert(os.path.isfile(curfolder+"/"+i))
-
+  
   #make men folders
   menyears = sorted(train[train['gender']=='M']["year"].unique())
   for y in menyears:
@@ -122,10 +126,13 @@ def create_folder_with_classes(basef,input_folder,output_folder,trainfile):
     imgs = train[(train["year"] == y) & (train["gender"] == 'M')]["imagepath"]
     for i in imgs:
       assert (os.path.isfile(input_folder+"/M/"+i))
+      if (os.path.isfile(curfolder+"/"+i)):
+        count_duplicate += 1
       copyfile(input_folder+"/M/"+i, curfolder+"/"+i)
       assert(os.path.isfile(curfolder+"/"+i))
 
-
+  print("number of duplicate files:", count_duplicate)
+  print("..........................We need to find a way to resolve this ................")
 def train(args):
   """Use transfer learning and fine-tuning to train a network on a new dataset"""
 
