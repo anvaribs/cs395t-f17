@@ -109,7 +109,7 @@ def create_folder_with_classes(basef,input_folder,output_folder,trainfile):
       os.system("mkdir "+curfolder)
     imgs = train[(train["year"] == y) & (train["gender"] == 'F')]["imagepath"]
     for i in imgs:
-      if os.path.isfile(input_folder+"/F/"+i):
+      if not os.path.isfile(input_folder+"/F/"+i):
         print('hey, the file is not there!!!')
       copyfile(input_folder+"/F/"+i, curfolder+"/"+i)
 
@@ -121,7 +121,7 @@ def create_folder_with_classes(basef,input_folder,output_folder,trainfile):
       os.system("mkdir "+curfolder)
     imgs = train[(train["year"] == y) & (train["gender"] == 'M')]["imagepath"]
     for i in imgs:
-      if os.path.isfile(input_folder+"/M/"+i):
+      if not os.path.isfile(input_folder+"/M/"+i):
         print('hey, the file is not there!!!')
       copyfile(input_folder+"/M/"+i, curfolder+"/"+i)
 
