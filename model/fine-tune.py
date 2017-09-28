@@ -136,7 +136,6 @@ def create_folder_with_classes(basef,input_folder,output_folder,trainfile):
       assert(os.path.isfile(curfolder+"/"+i))
 
   print("number of duplicate files:", count_duplicate)
-  print("..........................We need to find a way to resolve this ................")
 
 def train(args):
   """Use transfer learning and fine-tuning to train a network on a new dataset"""
