@@ -9,6 +9,7 @@ from keras.applications.inception_v3 import InceptionV3, preprocess_input
 from keras.models import Model
 from keras.layers import Dense, GlobalAveragePooling2D
 from keras.preprocessing.image import ImageDataGenerator
+from keras import optimizers
 from keras.optimizers import SGD
 
 import pandas as pd
@@ -38,8 +39,9 @@ def setup_to_transfer_learn(model, base_model):
     """Freeze all layers and compile the model"""  # Transfer learning: freeze all but the penultimate layer and re-train the last Dense layer
     for layer in base_model.layers:
         layer.trainable = False
-    model.compile(optimizer='rmsprop', loss='categorical_crossentropy',
-                  metrics=['accuracy'])  # just categorical_crossentropy,  maybe could add sparse_ to it
+    model.compile(optimizer = optimizers.RMSprop(lr = 1e-4),
+                  loss = 'categorical_crossentropy',
+                  metrics = ['accuracy'])  # just categorical_crossentropy,  maybe could add sparse_ to it
     # A target array with shape (32, 70) was passed for an output of shape (None, 0) while using as loss `categorical_crossentropy`. This loss expects targets to have the same shape as the output.
     #   Your model has an output of shape (10,), however, your outputs have dimension (1,).
     #   You probably want to convert your y_train to categorical one-hot vectors, ie, via keras.utils.np_utils.to_categorical.
@@ -63,8 +65,7 @@ def add_new_last_layer(base_model, nb_classes):
     # print(x)				   #Tensor("mixed10/concat:0", shape=(?, ?, ?, 2048), dtype=float32)
     # print(x.shape)			   #(?, ?, ?, 2048)
 
-    x = GlobalAveragePooling2D()(
-        x)  # GlobalAveragePooling2D converts the MxNxC tensor output into a 1xC tensor where C is the # of channels.
+    x = GlobalAveragePooling2D()(x)  # GlobalAveragePooling2D converts the MxNxC tensor output into a 1xC tensor where C is the # of channels.
     x = Dense(FC_SIZE, activation='relu')(x)  # new FC layer, random init  a fully-connected Dense layer of size 1024
     # print("after pooling, dense Lastlayer x.shape: ")
     # print(x)				   #Tensor("dense_1/Relu:0", shape=(?, 1024), dtype=float32)
@@ -97,52 +98,8 @@ def setup_to_finetune(model):
         layer.trainable = True
     model.compile(optimizer=SGD(lr=0.0001, momentum=0.9), loss='categorical_crossentropy', metrics=['accuracy'])
 
-
-def create_folder_with_classes(basef, input_folder, output_folder, trainfile):
-    print("Making Folders from " + input_folder + " to " + output_folder)
-    train = pd.read_csv(trainfile, names=['imagepath', 'year'], delimiter="\t")
-    train['gender'] = [t.split("/")[0] for t in train['imagepath']]
-    train['imagepath'] = [t.split("/")[1] for t in train['imagepath']]
-
-    os.system("mkdir " + basef + "/" + output_folder)
-    # make women folders and copy over file
-    womenyears = sorted(train[train['gender'] == 'F']["year"].unique())
-
-    count_duplicate = 0
-    for y in womenyears:
-        curfolder = basef + "/" + output_folder + "/" + str(y)
-        if os.path.isdir(curfolder) == False:
-            os.system("mkdir " + curfolder)
-        imgs = train[(train["year"] == y) & (train["gender"] == 'F')]["imagepath"]
-        for i in imgs:
-            assert (os.path.isfile(input_folder + "/F/" + i))
-            if (os.path.isfile(curfolder + "/" + i)):
-                count_duplicate += 1
-                copyfile(input_folder + "/F/" + i, curfolder + "/d" + i)
-            else:
-                copyfile(input_folder + "/F/" + i, curfolder + "/" + i)
-            assert (os.path.isfile(curfolder + "/" + i))
-
-    # make men folders
-    menyears = sorted(train[train['gender'] == 'M']["year"].unique())
-    for y in menyears:
-        curfolder = basef + "/" + output_folder + "/" + str(y)
-        if os.path.isdir(curfolder) == False:
-            os.system("mkdir " + curfolder)
-        imgs = train[(train["year"] == y) & (train["gender"] == 'M')]["imagepath"]
-        for i in imgs:
-            assert (os.path.isfile(input_folder + "/M/" + i))
-            if (os.path.isfile(curfolder + "/" + i)):
-                count_duplicate += 1
-                copyfile(input_folder + "/M/" + i, curfolder + "/d" + i)
-            else:
-                copyfile(input_folder + "/M/" + i, curfolder + "/" + i)
-            assert (os.path.isfile(curfolder + "/" + i))
-
-    print("number of duplicate files:", count_duplicate)
-
-
 def train(args):
+
     """Use transfer learning and fine-tuning to train a network on a new dataset"""
 
     # 0. CREATE EXPECTED FOLDER STRUCTURE
@@ -192,15 +149,21 @@ def train(args):
         zoom_range=0.2,
         horizontal_flip=True
     )
+    # test_datagen = ImageDataGenerator(
+    #     preprocessing_function=preprocess_input,
+    #     rotation_range=30,
+    #     width_shift_range=0.2,
+    #     height_shift_range=0.2,
+    #     shear_range=0.2,
+    #     zoom_range=0.2,
+    #     horizontal_flip=True
+    # )
+
+    # Amin: I don't think the validation set shoud be augmented
     test_datagen = ImageDataGenerator(
         preprocessing_function=preprocess_input,
-        rotation_range=30,
-        width_shift_range=0.2,
-        height_shift_range=0.2,
-        shear_range=0.2,
-        zoom_range=0.2,
-        horizontal_flip=True
     )
+
 
     # flow_from_directory(directory): Takes the path to a directory, and generates batches of augmented/normalized data. Yields batches indefinitely, in an infinite loop.
     # Arguments:
@@ -252,7 +215,7 @@ def train(args):
         steps_per_epoch=nb_train_samples / batch_size,
         validation_data=validation_generator,
         validation_steps=nb_val_samples / batch_size,
-        class_weight='auto')
+        class_weight='auto')  # Amin: what is this class_weight?
 
     ##  File "//anaconda/envs/tf/lib/python3.6/site-packages/keras/engine/training.py", line 144, in _standardize_input_data
     ##   str(array.shape))
@@ -306,21 +269,70 @@ def train(args):
         plot_training(history_ft)
 
 
+def create_folder_with_classes(basef, input_folder, output_folder, trainfile):
+    print("Making Folders from " + input_folder + " to " + output_folder)
+    train = pd.read_csv(trainfile, names=['imagepath', 'year'], delimiter="\t")
+    train['gender'] = [t.split("/")[0] for t in train['imagepath']]
+    train['imagepath'] = [t.split("/")[1] for t in train['imagepath']]
+
+    os.system("mkdir " + basef + "/" + output_folder)
+    # make women folders and copy over file
+    womenyears = sorted(train[train['gender'] == 'F']["year"].unique())
+
+    count_duplicate = 0
+    for y in womenyears:
+        curfolder = basef + "/" + output_folder + "/" + str(y)
+        if os.path.isdir(curfolder) == False:
+            os.system("mkdir " + curfolder)
+        imgs = train[(train["year"] == y) & (train["gender"] == 'F')]["imagepath"]
+        for i in imgs:
+            assert (os.path.isfile(input_folder + "/F/" + i))
+            if (os.path.isfile(curfolder + "/" + i)):
+                count_duplicate += 1
+                copyfile(input_folder + "/F/" + i, curfolder + "/d" + i)
+            else:
+                copyfile(input_folder + "/F/" + i, curfolder + "/" + i)
+            assert (os.path.isfile(curfolder + "/" + i))
+
+    # make men folders
+    menyears = sorted(train[train['gender'] == 'M']["year"].unique())
+    for y in menyears:
+        curfolder = basef + "/" + output_folder + "/" + str(y)
+        if os.path.isdir(curfolder) == False:
+            os.system("mkdir " + curfolder)
+        imgs = train[(train["year"] == y) & (train["gender"] == 'M')]["imagepath"]
+        for i in imgs:
+            assert (os.path.isfile(input_folder + "/M/" + i))
+            if (os.path.isfile(curfolder + "/" + i)):
+                count_duplicate += 1
+                copyfile(input_folder + "/M/" + i, curfolder + "/d" + i)
+            else:
+                copyfile(input_folder + "/M/" + i, curfolder + "/" + i)
+            assert (os.path.isfile(curfolder + "/" + i))
+
+    print("number of duplicate files:", count_duplicate)
+
+
 def plot_training(history):
     acc = history.history['acc']
     val_acc = history.history['val_acc']
     loss = history.history['loss']
     val_loss = history.history['val_loss']
+
     epochs = range(len(acc))
 
-    plt.plot(epochs, acc, 'r.')
-    plt.plot(epochs, val_acc, 'r')
+    plt.plot(epochs, acc, 'r.', label = 'Training Accuracy')
+    plt.plot(epochs, val_acc, 'r', label = 'Validation Accuracy')
     plt.title('Training and validation accuracy')
+    plt.legend()
 
     plt.figure()
-    plt.plot(epochs, loss, 'r.')
-    plt.plot(epochs, val_loss, 'r-')
+
+    plt.plot(epochs, loss, 'r.', label = 'Traning Loss')
+    plt.plot(epochs, val_loss, 'r-', label = 'Validation Loss')
     plt.title('Training and validation loss')
+    plt.legend()
+
     plt.show()
 
 
