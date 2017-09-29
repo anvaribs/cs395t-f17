@@ -37,9 +37,17 @@ def get_nb_files(directory):
 
 def setup_to_transfer_learn(model, base_model):
     """Freeze all layers and compile the model"""  # Transfer learning: freeze all but the penultimate layer and re-train the last Dense layer
+    print('Number of trainable weight tensors '
+      'before freezing the conv base:', len(model.trainable_weights))
+    
     for layer in base_model.layers:
         layer.trainable = False
-    model.compile(optimizer = optimizers.RMSprop(lr = 1e-4),
+        
+    print('Number of trainable weight tensors '
+      'after freezing the conv base:', len(model.trainable_weights))
+    
+    
+    model.compile(optimizer = optimizers.RMSprop(lr = 2e-5),
                   loss = 'categorical_crossentropy',
                   metrics = ['accuracy'])  # just categorical_crossentropy,  maybe could add sparse_ to it
     # A target array with shape (32, 70) was passed for an output of shape (None, 0) while using as loss `categorical_crossentropy`. This loss expects targets to have the same shape as the output.
@@ -188,6 +196,7 @@ def train(args):
 
     # setup model
     base_model = InceptionV3(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
+#    print(base_model.summary())
     model = add_new_last_layer(base_model, nb_classes)
 
     # transfer learning
