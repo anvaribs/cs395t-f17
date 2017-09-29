@@ -114,3 +114,4 @@ venv.bak/
 # data folder
 data/
 data/*/
+.idea/
