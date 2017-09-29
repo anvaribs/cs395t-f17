@@ -19,7 +19,7 @@ import code  # https://www.digitalocean.com/community/tutorials/how-to-debug-pyt
 
 IM_WIDTH, IM_HEIGHT = 299, 299  # fixed size for InceptionV3
 NB_EPOCHS = 3
-BAT_SIZE = 32
+BAT_SIZE = 128   # just for now
 FC_SIZE = 1024  # should this be 2048 as opposed to 1024.. give it a try
 NB_IV3_LAYERS_TO_FREEZE = 172
 
@@ -100,11 +100,19 @@ def setup_to_finetune(model):
     Args:
       model: keras model
     """
+    
+    print('Number of trainable weight tensors '
+      'before starting the fine-tuning step:', len(model.trainable_weights))
+    
     for layer in model.layers[:NB_IV3_LAYERS_TO_FREEZE]:
         layer.trainable = False
     for layer in model.layers[NB_IV3_LAYERS_TO_FREEZE:]:
         layer.trainable = True
-    model.compile(optimizer=SGD(lr=0.0001, momentum=0.9), loss='categorical_crossentropy', metrics=['accuracy'])
+        
+    print('Number of trainable weight tensors '
+      'during the fine-tuning step:', len(model.trainable_weights))
+      
+    model.compile(optimizer=optimizers.RMSprop(lr=1e-5), loss='categorical_crossentropy', metrics=['accuracy'])
 
 def train(args):
 
