@@ -241,7 +241,7 @@ def train(args):
         validation_steps=nb_val_samples / batch_size,
         class_weight='auto')
 
-    output_name = args.model_name+"_"+args.loss+"_"+args.optimizer+"_lr"+args.learning_rate+"_epochs"+nb_epoch+"_ft.model"
+    output_name = args.model_name+"_"+args.loss+"_"+args.optimizer+"_lr"+str(args.learning_rate)+"_epochs"+str(nb_epoch)+"_ft.model"
     model.save("fitted_models/"+output_name)
 
     acc = history.history['acc']
