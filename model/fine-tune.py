@@ -25,6 +25,7 @@ ARCHITECTURE = "inceptionv3"
 IM_WIDTH, IM_HEIGHT = 299, 299  
 NB_EPOCHS = 3
 BAT_SIZE = 128   
+LEARNING_RATE = 1e-4
 FC_SIZE = 1024  
 NB_LAYERS_TO_FREEZE = 172
 
@@ -51,7 +52,7 @@ def setup_to_transfer_learn(model, base_model, optimizer_in, loss_in, learning_r
     print('Number of trainable weight tensors '
       'after freezing the conv base:', len(model.trainable_weights))
     
-    if optimizer_in == "rmsprop": 
+    if optimizer_in == 'rmsprop': 
         model.compile(optimizer = optimizers.RMSprop(lr = learning_rate),
                       loss = loss_in,
                       metrics = ['accuracy'])  
@@ -113,7 +114,8 @@ def setup_to_finetune(model):
     print('Number of trainable weight tensors '
       'during the fine-tuning step:', len(model.trainable_weights))
       
-    model.compile(optimizer=optimizers.RMSprop(lr=1e-5), loss='categorical_crossentropy', metrics=['accuracy'])
+    # We should use lower learning rate when fine-tuning. learning_rate /10 is a good start.
+    model.compile(optimizer=optimizers.RMSprop(lr=learning_rate/10), loss='categorical_crossentropy', metrics=['accuracy'])
 
 def train(args):
 
@@ -342,9 +344,9 @@ if __name__ == "__main__":
     a.add_argument("--valid_file", default="yearbook_valid.txt")
     a.add_argument("--nb_epoch", default=NB_EPOCHS)
     a.add_argument("--batch_size", default=BAT_SIZE)
-    a.add_argument("--optimizer", default=BAT_SIZE)
-    a.add_argument("--loss", default=BAT_SIZE)
-    a.add_argument("--learning_rate", default=BAT_SIZE)
+    a.add_argument("--optimizer", default='rmsprop')
+    a.add_argument("--loss", default='categorical_crossentropy')
+    a.add_argument("--learning_rate", default=LEARNING_RATE)
     a.add_argument("--output_model_file", default="inceptionv3-ft.model")
     a.add_argument("--plot", action="store_true")
 
