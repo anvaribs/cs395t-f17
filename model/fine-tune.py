@@ -115,7 +115,7 @@ def setup_to_finetune(model):
       'during the fine-tuning step:', len(model.trainable_weights))
       
     # We should use lower learning rate when fine-tuning. learning_rate /10 is a good start.
-    model.compile(optimizer=optimizers.RMSprop(lr=learning_rate/10), loss='categorical_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=optimizers.RMSprop(lr= LEARNING_RATE/10), loss='categorical_crossentropy', metrics=['accuracy'])
 
 def train(args):
 
