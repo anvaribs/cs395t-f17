@@ -1,0 +1,1 @@
+date,architecture,optimizer,loss,learning_rate,epochs,batch_size,train_acc,train_loss,val_acc,val_loss,model_name

@@ -15,13 +15,19 @@ from keras.optimizers import SGD
 import pandas as pd
 from shutil import copyfile
 
+from keras.utils import plot_model
 import code  # https://www.digitalocean.com/community/tutorials/how-to-debug-python-with-an-interactive-console
+import datetime
 
-IM_WIDTH, IM_HEIGHT = 299, 299  # fixed size for InceptionV3
+
+#default for inceptionv3
+ARCHITECTURE = "inceptionv3"
+IM_WIDTH, IM_HEIGHT = 299, 299  
 NB_EPOCHS = 3
-BAT_SIZE = 32
-FC_SIZE = 1024  # should this be 2048 as opposed to 1024.. give it a try
-NB_IV3_LAYERS_TO_FREEZE = 172
+BAT_SIZE = 128   
+LEARNING_RATE = 1e-4
+FC_SIZE = 1024  
+NB_LAYERS_TO_FREEZE = 172
 
 
 def get_nb_files(directory):
@@ -35,7 +41,7 @@ def get_nb_files(directory):
     return cnt
 
 
-def setup_to_transfer_learn(model, base_model):
+def setup_to_transfer_learn(model, base_model, optimizer_in, loss_in, learning_rate  ):
     """Freeze all layers and compile the model"""  # Transfer learning: freeze all but the penultimate layer and re-train the last Dense layer
     print('Number of trainable weight tensors '
       'before freezing the conv base:', len(model.trainable_weights))
@@ -46,14 +52,10 @@ def setup_to_transfer_learn(model, base_model):
     print('Number of trainable weight tensors '
       'after freezing the conv base:', len(model.trainable_weights))
     
-    
-    model.compile(optimizer = optimizers.RMSprop(lr = 2e-5),
-                  loss = 'categorical_crossentropy',
-                  metrics = ['accuracy'])  # just categorical_crossentropy,  maybe could add sparse_ to it
-    # A target array with shape (32, 70) was passed for an output of shape (None, 0) while using as loss `categorical_crossentropy`. This loss expects targets to have the same shape as the output.
-    #   Your model has an output of shape (10,), however, your outputs have dimension (1,).
-    #   You probably want to convert your y_train to categorical one-hot vectors, ie, via keras.utils.np_utils.to_categorical.
-
+    if optimizer_in == 'rmsprop': 
+        model.compile(optimizer = optimizers.RMSprop(lr = learning_rate),
+                      loss = loss_in,
+                      metrics = ['accuracy'])  
 
 def add_new_last_layer(base_model, nb_classes):
     """Add last layer to the convnet
@@ -100,11 +102,20 @@ def setup_to_finetune(model):
     Args:
       model: keras model
     """
-    for layer in model.layers[:NB_IV3_LAYERS_TO_FREEZE]:
+    
+    print('Number of trainable weight tensors '
+      'before starting the fine-tuning step:', len(model.trainable_weights))
+    
+    for layer in model.layers[:NB_LAYERS_TO_FREEZE]:
         layer.trainable = False
-    for layer in model.layers[NB_IV3_LAYERS_TO_FREEZE:]:
+    for layer in model.layers[NB_LAYERS_TO_FREEZE:]:
         layer.trainable = True
-    model.compile(optimizer=SGD(lr=0.0001, momentum=0.9), loss='categorical_crossentropy', metrics=['accuracy'])
+        
+    print('Number of trainable weight tensors '
+      'during the fine-tuning step:', len(model.trainable_weights))
+      
+    # We should use lower learning rate when fine-tuning. learning_rate /10 is a good start.
+    model.compile(optimizer=optimizers.RMSprop(lr=learning_rate/10), loss='categorical_crossentropy', metrics=['accuracy'])
 
 def train(args):
 
@@ -146,6 +157,14 @@ def train(args):
     print("nb_epoch: ", nb_epoch)
     print("batch_size: ", batch_size)
 
+    # SET DEFAULTS BASED ON ARTCHITECTURE
+    ARCHITECTURE = args.model_name
+    if args.model_name == "inceptionv3":
+        IM_WIDTH, IM_HEIGHT = 299, 299 
+        FC_SIZE = 1024  # should this be 2048 as opposed to 1024.. give it a try
+        NB_LAYERS_TO_FREEZE = 172
+
+
     # 1. PREPROCESS THE IMAGES WE HAVE
     # data prep  #https://keras.io/preprocessing/image/
     train_datagen = ImageDataGenerator(
@@ -172,7 +191,6 @@ def train(args):
         preprocessing_function=preprocess_input,
     )
 
-
     # flow_from_directory(directory): Takes the path to a directory, and generates batches of augmented/normalized data. Yields batches indefinitely, in an infinite loop.
     # Arguments:
     # - directory: path to the target directory.
@@ -196,28 +214,12 @@ def train(args):
 
     # setup model
     base_model = InceptionV3(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
-#    print(base_model.summary())
+    # print(base_model.summary())
     model = add_new_last_layer(base_model, nb_classes)
 
     # transfer learning
-    setup_to_transfer_learn(model, base_model)
+    setup_to_transfer_learn(model, base_model, args.optimizer, args.loss, float(args.learning_rate))
 
-    '''
-    history_tl = model.fit_generator(
-      train_generator,
-      nb_epoch=nb_epoch,
-      samples_per_epoch=nb_train_samples,
-      validation_data=validation_generator,
-      nb_val_samples=nb_val_samples,
-      class_weight='auto')
-  
-    fine-tune.py:193: UserWarning: The semantics of the Keras 2 argument `steps_per_epoch` is not the same as the Keras 1 argument `samples_per_epoch`. `steps_per_epoch` is the number of batches to draw from the generator at each epoch. Basically steps_per_epoch = samples_per_epoch/batch_size. Similarly `nb_val_samples`->`validation_steps` and `val_samples`->`steps` arguments have changed. Update your method calls accordingly.
-    class_weight='auto')
-  
-  fine-tune.py:193: UserWarning: Update your `fit_generator` call to the Keras 2 API: `fit_generator(<keras.pre..., validation_data=<keras.pre..., class_weight="auto", steps_per_epoch=6, epochs=3, validation_steps=20)`
-    class_weight='auto')
-  
-    '''
     history_tl = model.fit_generator(
         train_generator,
         epochs=nb_epoch,
@@ -226,43 +228,12 @@ def train(args):
         validation_steps=nb_val_samples / batch_size,
         class_weight='auto')  # Amin: what is this class_weight?
 
-    ##  File "//anaconda/envs/tf/lib/python3.6/site-packages/keras/engine/training.py", line 144, in _standardize_input_data
-    ##   str(array.shape))
-    ##  ValueError: Error when checking target: expected dense_2 to have shape (None, 1) but got array with shape (32, 70)
-
-    '''
-    File "fine-tune.py", line 209, in train
-      class_weight='auto')
-    File "//anaconda/envs/tf/lib/python3.6/site-packages/keras/legacy/interfaces.py", line 87, in wrapper
-      return func(*args, **kwargs)
-    File "//anaconda/envs/tf/lib/python3.6/site-packages/keras/engine/training.py", line 2042, in fit_generator
-      class_weight=class_weight)
-    File "//anaconda/envs/tf/lib/python3.6/site-packages/keras/engine/training.py", line 1756, in train_on_batch
-      check_batch_axis=True)
-    File "//anaconda/envs/tf/lib/python3.6/site-packages/keras/engine/training.py", line 1393, in _standardize_user_data
-      self._feed_output_shapes)
-    File "//anaconda/envs/tf/lib/python3.6/site-packages/keras/engine/training.py", line 297, in _check_loss_and_target_compatibility
-      ' while using as loss `' + loss.__name__ + '`. '
-    ValueError: A target array with shape (32, 70) was passed for an output of shape (None, 0) while using as loss `categorical_crossentropy`. This loss expects targets to have the same shape as the output.
-  
-    '''
-
     # fine-tuning
     setup_to_finetune(model)
 
     # Doing transfer learning and then fine-tuning, in that order, will ensure a more stable and consistent training.
     # This is because the large gradient updates triggered by randomly initialized weights could wreck the learned weights in the convolutional base if not frozen.
     # Once the last layer has stabilized (transfer learning), then we move onto retraining more layers (fine-tuning).
-
-    '''
-    history_ft = model.fit_generator(
-      train_generator,
-      samples_per_epoch=nb_train_samples,
-      nb_epoch=nb_epoch,
-      validation_data=validation_generator,
-      nb_val_samples=nb_val_samples,
-      class_weight='auto')
-    '''
 
     history_ft = model.fit_generator(
         train_generator,
@@ -272,10 +243,23 @@ def train(args):
         validation_steps=nb_val_samples / batch_size,
         class_weight='auto')
 
-    model.save(args.output_model_file)
+    output_name = args.model_name+"_"+args.loss+"_"+args.optimizer+"_lr"+str(args.learning_rate)+"_epochs"+str(nb_epoch)+"_ft.model"
+    model.save("fitted_models/"+output_name)
 
-    if args.plot:
-        plot_training(history_ft)
+    acc = history.history['acc']
+    val_acc = history.history['val_acc']
+    loss = history.history['loss']
+    val_loss = history.history['val_loss']
+
+
+    results_df = pd.read_csv('model_results.csv')
+    #date,architecture,optimizer,loss,learning_rate,epochs,batch_size,train_acc,train_loss,val_acc,val_loss,model_name
+    datenow = datetime.datetime.today().strftime('%Y-%m-%d_%H:%m')
+    results_df.loc[len(results_df.rows)] = [ datenow, args.model_name, args.optimizer, args.loss, args.learning_rate, args.epochs, args.batch_size, \
+                                             acc, loss, val_acc, val_loss, outputname ]    
+    results_df.to_csv("model_results.csv")
+
+    plot_training(output_name,model,history_ft)
 
 
 def create_folder_with_classes(basef, input_folder, output_folder, trainfile):
@@ -322,7 +306,7 @@ def create_folder_with_classes(basef, input_folder, output_folder, trainfile):
     print("number of duplicate files:", count_duplicate)
 
 
-def plot_training(history):
+def plot_training(modelname,model,history_ft):
     acc = history.history['acc']
     val_acc = history.history['val_acc']
     loss = history.history['loss']
@@ -342,13 +326,15 @@ def plot_training(history):
     plt.title('Training and validation loss')
     plt.legend()
 
-    plt.show()
+    plt.savefig("fitted_models/"+modelname,+"_train_val_acc_loss.png")
+
+    plot_model(model, to_file="fitted_models/"+modelname + '_keras.png')
 
 
 if __name__ == "__main__":
     # SAMPLE CALLs
     # python fine-tune.py --data_dir="../data/yearbook" --model_name="inceptionv3"         #use training set from data/yearbook/train, new images in data/yearbook/train_inception3
-    # python fine-tune.py --data_dir="../data/yearbook" --inpphilut_dir="train_sub" --valid_dir="valid_sub" --train_file="yearbook_train_small.txt" --valid_file="yearbook_valid_small.txt" --model_name="inceptionv3"
+    # python fine-tune.py --data_dir="../data/yearbook" --input_dir="train_sub" --valid_dir="valid_sub" --train_file="yearbook_train_small.txt" --valid_file="yearbook_valid_small.txt" --model_name="inceptionv3"
     a = argparse.ArgumentParser()
     a.add_argument("--data_dir", default='../data/yearbook')
     a.add_argument("--input_dir", default="train")
@@ -358,6 +344,9 @@ if __name__ == "__main__":
     a.add_argument("--valid_file", default="yearbook_valid.txt")
     a.add_argument("--nb_epoch", default=NB_EPOCHS)
     a.add_argument("--batch_size", default=BAT_SIZE)
+    a.add_argument("--optimizer", default='rmsprop')
+    a.add_argument("--loss", default='categorical_crossentropy')
+    a.add_argument("--learning_rate", default=LEARNING_RATE)
     a.add_argument("--output_model_file", default="inceptionv3-ft.model")
     a.add_argument("--plot", action="store_true")
 
