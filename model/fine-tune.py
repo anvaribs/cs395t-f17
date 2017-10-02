@@ -104,7 +104,7 @@ def add_new_last_layer(base_model, nb_classes, FC_SIZE):
     return model
 
 
-def setup_to_finetune(model, NB_LAYERS_TO_FREEZE, optimizer_in, loss_in, learning_rate):
+def setup_to_finetune(model: object, NB_LAYERS_TO_FREEZE: object, optimizer_in: object, loss_in: object, learning_rate: object) -> object:
     """Freeze the bottom NB_IV3_LAYERS and retrain the remaining top layers.  #Fine-tuning: un-freeze the lower convolutional layers and retrain more layers
 
     note: NB_IV3_LAYERS corresponds to the top 2 inception blocks in the inceptionv3 arch
@@ -266,7 +266,7 @@ def train(args):
         class_weight='auto')  # Amin: what is this class_weight?
 
     # fine-tuning
-    setup_to_finetune(model, args.optimizer, args.loss, float(args.learning_rate))
+    setup_to_finetune(model, NB_LAYERS_TO_FREEZE, args.optimizer, args.loss, float(args.learning_rate))
 
     # Doing transfer learning and then fine-tuning, in that order, will ensure a more stable and consistent training.
     # This is because the large gradient updates triggered by randomly initialized weights could wreck the learned weights in the convolutional base if not frozen.
