@@ -6,6 +6,7 @@ if __name__ == "__main__":
     
     a = argparse.ArgumentParser()
     a.add_argument("--cuda_device", default=3)
+    a.add_argument("--conf_file", default='conf.csv')
     a.add_argument("--data_dir", default='../data/yearbook')
     a.add_argument("--input_dir", default="train")
     a.add_argument("--valid_dir", default="valid")
@@ -15,7 +16,7 @@ if __name__ == "__main__":
     args = a.parse_args()
     
     #open conf.csv and call fine-tune.py with each configuration
-    runs = pd.read_csv('conf.csv')
+    runs = pd.read_csv(args.conf_file)
     for index, row in runs.iterrows():
         print("On: ",row)
         #print(row.architecture)
