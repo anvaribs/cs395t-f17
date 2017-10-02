@@ -132,11 +132,11 @@ def setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, optimizer_i
             else:
                 layer.trainable = False
 
-        else:
-            for layer in model.layers[:NB_LAYERS_TO_FREEZE]:
-                layer.trainable = False
-            for layer in model.layers[NB_LAYERS_TO_FREEZE:]:
-                layer.trainable = True
+    else:
+        for layer in model.layers[:NB_LAYERS_TO_FREEZE]:
+            layer.trainable = False
+        for layer in model.layers[NB_LAYERS_TO_FREEZE:]:
+            layer.trainable = True
         
     print('Number of trainable weight tensors '
       'during the fine-tuning step:', len(model.trainable_weights))
@@ -238,11 +238,18 @@ def train(args):
         preprocess_input = xception.preprocess_input
 
 
-    if args.model_name == "InceptionResNetV2":
-        pass
 
     if args.model_name == "ResNet50":
-        pass
+        IM_WIDTH, IM_HEIGHT = 224, 224
+        FC_SIZE = 1024
+        LAYER_FROM_FREEZE = 'res4a_branch2a'
+        NB_LAYERS_TO_FREEZE = None
+        # setup model
+        base_model = resnet50.ResNet50(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
+        # print(base_model.summary())
+        preprocess_input = resnet50.preprocess_input
+
+
 
 
 
