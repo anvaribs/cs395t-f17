@@ -21,7 +21,7 @@ module list
 pwd
 date
 
-# Launch the MPI executable named "a.out"
+# Launch the job, using python3. Make sure to put all the library loads in the .bashrc file
 
 python3 run_experiments.py --conf_file='conf_test.csv'
 
