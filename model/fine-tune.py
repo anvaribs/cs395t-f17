@@ -104,7 +104,7 @@ def add_new_last_layer(base_model, nb_classes, FC_SIZE):
     return model
 
 
-def setup_to_finetune(model: object, NB_LAYERS_TO_FREEZE: object, optimizer_in: object, loss_in: object, learning_rate: object) -> object:
+def setup_to_finetune(model, LAYER_FROM_FREEZE,NB_LAYERS_TO_FREEZE, optimizer_in, loss_in, learning_rate):
     """Freeze the bottom NB_IV3_LAYERS and retrain the remaining top layers.  #Fine-tuning: un-freeze the lower convolutional layers and retrain more layers
 
     note: NB_IV3_LAYERS corresponds to the top 2 inception blocks in the inceptionv3 arch
@@ -115,11 +115,26 @@ def setup_to_finetune(model: object, NB_LAYERS_TO_FREEZE: object, optimizer_in: 
     
     print('Number of trainable weight tensors '
       'before starting the fine-tuning step:', len(model.trainable_weights))
-    
-    for layer in model.layers[:NB_LAYERS_TO_FREEZE]:
-        layer.trainable = False
-    for layer in model.layers[NB_LAYERS_TO_FREEZE:]:
-        layer.trainable = True
+
+    # Feature to unfreeze part of network from LAYER_FROM_FREEZE to the end
+    if(LAYER_FROM_FREEZE != ''):
+        model.trainable = True
+
+        set_trainable = False
+
+        for layer in model.layers:
+            if layer.name == LAYER_FROM_FREEZE:
+                set_trainable = True
+            if set_trainable:
+                layer.trainable = True
+            else:
+                layer.trainable = False
+
+        else:
+            for layer in model.layers[:NB_LAYERS_TO_FREEZE]:
+                layer.trainable = False
+            for layer in model.layers[NB_LAYERS_TO_FREEZE:]:
+                layer.trainable = True
         
     print('Number of trainable weight tensors '
       'during the fine-tuning step:', len(model.trainable_weights))
@@ -181,12 +196,15 @@ def train(args):
     if args.model_name == "inceptionv3":
         IM_WIDTH, IM_HEIGHT = 299, 299 
         FC_SIZE = 1024  # should this be 2048 as opposed to 1024.. give it a try
+        LAYER_FROM_FREEZE = ''
         NB_LAYERS_TO_FREEZE = 172
 
     if args.model_name == "VGG16":
         IM_WIDTH, IM_HEIGHT = 224, 224
         FC_SIZE = 256
+        LAYER_FROM_FREEZE = 'block5_conv1'
         NB_LAYERS_TO_FREEZE = 5
+
 
     if args.model_name == "VGG19":
         pass
