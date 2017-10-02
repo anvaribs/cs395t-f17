@@ -209,7 +209,7 @@ def train(args):
         IM_WIDTH, IM_HEIGHT = 224, 224
         FC_SIZE = 256
         LAYER_FROM_FREEZE = 'block5_conv1'
-        NB_LAYERS_TO_FREEZE = 5
+        NB_LAYERS_TO_FREEZE = None
         # setup model
         base_model = vgg16.VGG16(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
         # print(base_model.summary())
@@ -217,10 +217,26 @@ def train(args):
 
 
     if args.model_name == "VGG19":
-        pass
+        IM_WIDTH, IM_HEIGHT = 224, 224
+        FC_SIZE = 256
+        LAYER_FROM_FREEZE = 'block5_conv1'
+        NB_LAYERS_TO_FREEZE = None
+        # setup model
+        base_model = vgg19.VGG19(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
+        # print(base_model.summary())
+        preprocess_input = vgg19.preprocess_input
+
 
     if args.model_name == "Xception":
-        pass
+        IM_WIDTH, IM_HEIGHT = 299, 299
+        FC_SIZE = 256
+        LAYER_FROM_FREEZE = 'block11_sepconv1_act'
+        NB_LAYERS_TO_FREEZE = None
+        # setup model
+        base_model = xception.Xception(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
+        # print(base_model.summary())
+        preprocess_input = xception.preprocess_input
+
 
     if args.model_name == "InceptionResNetV2":
         pass
