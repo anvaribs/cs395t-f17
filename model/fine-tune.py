@@ -22,12 +22,12 @@ import datetime
 
 #default for inceptionv3
 ARCHITECTURE = "inceptionv3"
-IM_WIDTH, IM_HEIGHT = 299, 299  
-NB_EPOCHS = 3
+# IM_WIDTH, IM_HEIGHT = 299, 299
+NB_EPOCHS = 10
 BAT_SIZE = 128   
 LEARNING_RATE = 1e-4
-FC_SIZE = 1024  
-NB_LAYERS_TO_FREEZE = 172
+# FC_SIZE = 1024
+# NB_LAYERS_TO_FREEZE = 172
 
 
 def get_nb_files(directory):
@@ -52,12 +52,22 @@ def setup_to_transfer_learn(model, base_model, optimizer_in, loss_in, learning_r
     print('Number of trainable weight tensors '
       'after freezing the conv base:', len(model.trainable_weights))
     
-    if optimizer_in == 'rmsprop': 
-        model.compile(optimizer = optimizers.RMSprop(lr = learning_rate),
-                      loss = loss_in,
-                      metrics = ['accuracy'])  
+    if optimizer_in == 'rmsprop':
+        optimizer_tf = optimizers.RMSprop(lr = learning_rate)
+    elif optimizer_in == 'adam':
+        optimizer_tf = optimizers.Adam(lr = learning_rate)
+    elif optimizer_in == 'sgd':
+        optimizer_tf = optimizers.SGD(lr = learning_rate, momentum=9.0, nesterov=True)
+    elif optimizer_in == 'adagrad':
+        optimizer_tf = optimizers.Adagrad(lr = learning_rate)
 
-def add_new_last_layer(base_model, nb_classes):
+
+    model.compile(optimizer = optimizer_tf,
+                  loss = loss_in,
+                  metrics = ['accuracy'])
+
+
+def add_new_last_layer(base_model, nb_classes, FC_SIZE):
     """Add last layer to the convnet
 
     Args:
@@ -81,10 +91,10 @@ def add_new_last_layer(base_model, nb_classes):
     # print(x)				   #Tensor("dense_1/Relu:0", shape=(?, 1024), dtype=float32)
     # print(x.shape)                           #(?, 1024)
 
-    predictions = Dense(nb_classes, activation='softmax')(
-        x)  # new softmax layer on the output to squeeze the values between [0,1]
+    # new softmax layer on the output to squeeze the values between [0,1]
+    predictions = Dense(nb_classes, activation='softmax')(x)
     # print("predictions.shape: ")
-    print("PREDICTIONS should need to be in [0,1].  nb_classes: ", nb_classes, " should be the size of your last layer")
+    print("PREDICTIONS need to be in [0,1].  nb_classes: ", nb_classes, " should be the size of your last layer")
     print(predictions)
     print(predictions.shape)  # (?, 0)
 
@@ -94,7 +104,7 @@ def add_new_last_layer(base_model, nb_classes):
     return model
 
 
-def setup_to_finetune(model):
+def setup_to_finetune(model, NB_LAYERS_TO_FREEZE, optimizer_in, loss_in, learning_rate):
     """Freeze the bottom NB_IV3_LAYERS and retrain the remaining top layers.  #Fine-tuning: un-freeze the lower convolutional layers and retrain more layers
 
     note: NB_IV3_LAYERS corresponds to the top 2 inception blocks in the inceptionv3 arch
@@ -113,9 +123,18 @@ def setup_to_finetune(model):
         
     print('Number of trainable weight tensors '
       'during the fine-tuning step:', len(model.trainable_weights))
+
+    if optimizer_in == 'rmsprop':
+        optimizer_tf = optimizers.RMSprop(lr = learning_rate/10)
+    elif optimizer_in == 'adam':
+        optimizer_tf = optimizers.Adam(lr = learning_rate/10)
+    elif optimizer_in == 'sgd':
+        optimizer_tf = optimizers.SGD(lr = learning_rate/10, momentum=9.0, nesterov=True)
+    elif optimizer_in == 'adagrad':
+        optimizer_tf = optimizers.Adagrad(lr = learning_rate/10)
       
     # We should use lower learning rate when fine-tuning. learning_rate /10 is a good start.
-    model.compile(optimizer=optimizers.RMSprop(lr= LEARNING_RATE/10), loss='categorical_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=optimizer_tf, loss=loss_in, metrics=['accuracy'])
 
 def train(args):
 
@@ -163,6 +182,24 @@ def train(args):
         IM_WIDTH, IM_HEIGHT = 299, 299 
         FC_SIZE = 1024  # should this be 2048 as opposed to 1024.. give it a try
         NB_LAYERS_TO_FREEZE = 172
+
+    if args.model_name == "VGG16":
+        IM_WIDTH, IM_HEIGHT = 224, 224
+        FC_SIZE = 256
+        NB_LAYERS_TO_FREEZE = 5
+
+    if args.model_name == "VGG19":
+        pass
+
+    if args.model_name == "Xception":
+        pass
+
+    if args.model_name == "InceptionResNetV2":
+        pass
+
+    if args.model_name == "ResNet50":
+        pass
+
 
 
     # 1. PREPROCESS THE IMAGES WE HAVE
@@ -215,7 +252,7 @@ def train(args):
     # setup model
     base_model = InceptionV3(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
     # print(base_model.summary())
-    model = add_new_last_layer(base_model, nb_classes)
+    model = add_new_last_layer(base_model, nb_classes, FC_SIZE)
 
     # transfer learning
     setup_to_transfer_learn(model, base_model, args.optimizer, args.loss, float(args.learning_rate))
@@ -229,7 +266,7 @@ def train(args):
         class_weight='auto')  # Amin: what is this class_weight?
 
     # fine-tuning
-    setup_to_finetune(model)
+    setup_to_finetune(model, args.optimizer, args.loss, float(args.learning_rate))
 
     # Doing transfer learning and then fine-tuning, in that order, will ensure a more stable and consistent training.
     # This is because the large gradient updates triggered by randomly initialized weights could wreck the learned weights in the convolutional base if not frozen.
@@ -246,10 +283,10 @@ def train(args):
     output_name = args.model_name+"_"+args.loss+"_"+args.optimizer+"_lr"+str(args.learning_rate)+"_epochs"+str(nb_epoch)+"_ft.model"
     model.save("fitted_models/"+output_name)
 
-    acc = history.history['acc']
-    val_acc = history.history['val_acc']
-    loss = history.history['loss']
-    val_loss = history.history['val_loss']
+    acc = history_ft.history['acc']
+    val_acc = history_ft.history['val_acc']
+    loss = history_ft.history['loss']
+    val_loss = history_ft.history['val_loss']
 
 
     results_df = pd.read_csv('model_results.csv')
@@ -306,7 +343,7 @@ def create_folder_with_classes(basef, input_folder, output_folder, trainfile):
     print("number of duplicate files:", count_duplicate)
 
 
-def plot_training(modelname,model,history_ft):
+def plot_training(modelname,model,history):
     acc = history.history['acc']
     val_acc = history.history['val_acc']
     loss = history.history['loss']
@@ -326,7 +363,7 @@ def plot_training(modelname,model,history_ft):
     plt.title('Training and validation loss')
     plt.legend()
 
-    plt.savefig("fitted_models/"+modelname,+"_train_val_acc_loss.png")
+    plt.savefig("fitted_models/"+modelname+"_train_val_acc_loss.png")
 
     plot_model(model, to_file="fitted_models/"+modelname + '_keras.png')
 
