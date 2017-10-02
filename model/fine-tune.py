@@ -211,7 +211,7 @@ def train(args):
         LAYER_FROM_FREEZE = 'block5_conv1'
         NB_LAYERS_TO_FREEZE = 5
         # setup model
-        base_model = vgg.VGG16(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
+        base_model = vgg16.VGG16(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
         # print(base_model.summary())
         preprocess_input = vgg16.preprocess_input
 
@@ -407,7 +407,7 @@ if __name__ == "__main__":
     a.add_argument("--data_dir", default='../data/yearbook')
     a.add_argument("--input_dir", default="train")
     a.add_argument("--valid_dir", default="valid")
-    a.add_argument("--model_name", default="inceptionv3")
+    a.add_argument("--model_name", default="VGG16")
     a.add_argument("--train_file", default="yearbook_train.txt")
     a.add_argument("--valid_file", default="yearbook_valid.txt")
     a.add_argument("--nb_epoch", default=NB_EPOCHS)
