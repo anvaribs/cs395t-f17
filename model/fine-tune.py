@@ -266,7 +266,7 @@ def train(args):
         class_weight='auto')  # Amin: what is this class_weight?
 
     output_name = args.model_name + "_" + args.loss + "_" + args.optimizer + "_lr" + str(
-        args.learning_rate) + "_epochs" + str(nb_epoch) + "_tf.model"
+        args.learning_rate) + "_epochs" + str(nb_epoch) + "_tl.model"
     model.save("fitted_models/" + output_name)
 
     plot_training(output_name, model, history_tf)
