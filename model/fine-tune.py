@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from keras import __version__
 # from keras.applications.inception_v3 import InceptionV3, preprocess_input
 # from keras.applications.vgg16 import VGG16
-from keras.applications import vgg16, vgg19, inception_v3, xception, resnet50, inception_resnet_v2
+from keras.applications import vgg16, vgg19, inception_v3, xception, resnet50
 from keras.models import Model
 from keras.layers import Dense, GlobalAveragePooling2D
 from keras.preprocessing.image import ImageDataGenerator
@@ -201,7 +201,7 @@ def train(args):
         LAYER_FROM_FREEZE = ''
         NB_LAYERS_TO_FREEZE = 172
         # setup model
-        base_model = InceptionV3(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
+        base_model = inception_v3.InceptionV3(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
         # print(base_model.summary())
         preprocess_input = inception_v3.preprocess_input
 
@@ -211,7 +211,7 @@ def train(args):
         LAYER_FROM_FREEZE = 'block5_conv1'
         NB_LAYERS_TO_FREEZE = 5
         # setup model
-        base_model = VGG16(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
+        base_model = vgg.VGG16(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
         # print(base_model.summary())
         preprocess_input = vgg16.preprocess_input
 
