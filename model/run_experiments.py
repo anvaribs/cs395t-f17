@@ -32,7 +32,7 @@ if __name__ == "__main__":
         
 '''
 mimic sample call:
-CUDA_VISIBLE_DEVICES=3 python fine-tune.py --data_dir="../data/yearbook" --input_dir="train" --valid_dir="valid" --train_file="yearbook_train.txt" --valid_file="yearbook_valid.txt" --model_name="inceptionv3" > outputresults.xt
+CUDA_VISIBLE_DEVICES=3 python fine-tune.py --data_dir="../data/yearbook" --input_dir="train" --valid_dir="valid" --train_file="yearbook_train.txt" --valid_file="yearbook_valid.txt" --model_name="inceptionv3" > outputresults.txt
 
 sample row in conf:
 architecture                     inceptionv3
