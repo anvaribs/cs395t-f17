@@ -265,6 +265,12 @@ def train(args):
         validation_steps=nb_val_samples / batch_size,
         class_weight='auto')  # Amin: what is this class_weight?
 
+    output_name = args.model_name + "_" + args.loss + "_" + args.optimizer + "_lr" + str(
+        args.learning_rate) + "_epochs" + str(nb_epoch) + "_tf.model"
+    model.save("fitted_models/" + output_name)
+
+    plot_training(output_name, model, history_tf)
+
     # fine-tuning
     setup_to_finetune(model, NB_LAYERS_TO_FREEZE, args.optimizer, args.loss, float(args.learning_rate))
 
