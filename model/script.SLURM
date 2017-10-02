@@ -1,9 +1,6 @@
 #!/bin/bash
 #----------------------------------------------------
-# Example SLURM job script to run MPI applications on 
 # TACC's Maverick system.
-#
-# $Id: job.mpi 1580 2013-01-08 04:10:50Z karl $
 #----------------------------------------------------
 
 #SBATCH -J model_builder              # Job name
