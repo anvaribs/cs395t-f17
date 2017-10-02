@@ -5,7 +5,9 @@ import argparse
 import matplotlib.pyplot as plt
 
 from keras import __version__
-from keras.applications.inception_v3 import InceptionV3, preprocess_input
+# from keras.applications.inception_v3 import InceptionV3, preprocess_input
+# from keras.applications.vgg16 import VGG16
+from keras.applications import vgg16, vgg19, inception_v3, xception, resnet50, inception_resnet_v2
 from keras.models import Model
 from keras.layers import Dense, GlobalAveragePooling2D
 from keras.preprocessing.image import ImageDataGenerator
@@ -104,7 +106,7 @@ def add_new_last_layer(base_model, nb_classes, FC_SIZE):
     return model
 
 
-def setup_to_finetune(model, LAYER_FROM_FREEZE,NB_LAYERS_TO_FREEZE, optimizer_in, loss_in, learning_rate):
+def setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, optimizer_in, loss_in, learning_rate):
     """Freeze the bottom NB_IV3_LAYERS and retrain the remaining top layers.  #Fine-tuning: un-freeze the lower convolutional layers and retrain more layers
 
     note: NB_IV3_LAYERS corresponds to the top 2 inception blocks in the inceptionv3 arch
@@ -198,12 +200,20 @@ def train(args):
         FC_SIZE = 1024  # should this be 2048 as opposed to 1024.. give it a try
         LAYER_FROM_FREEZE = ''
         NB_LAYERS_TO_FREEZE = 172
+        # setup model
+        base_model = InceptionV3(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
+        # print(base_model.summary())
+        preprocess_input = inception_v3.preprocess_input
 
     if args.model_name == "VGG16":
         IM_WIDTH, IM_HEIGHT = 224, 224
         FC_SIZE = 256
         LAYER_FROM_FREEZE = 'block5_conv1'
         NB_LAYERS_TO_FREEZE = 5
+        # setup model
+        base_model = VGG16(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
+        # print(base_model.summary())
+        preprocess_input = vgg16.preprocess_input
 
 
     if args.model_name == "VGG19":
@@ -267,9 +277,7 @@ def train(args):
         classes=response_classes
     )
 
-    # setup model
-    base_model = InceptionV3(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
-    # print(base_model.summary())
+
     model = add_new_last_layer(base_model, nb_classes, FC_SIZE)
 
     # transfer learning
@@ -289,7 +297,7 @@ def train(args):
     plot_training(output_name, model, history_tl)
 
     # fine-tuning
-    setup_to_finetune(model, NB_LAYERS_TO_FREEZE, args.optimizer, args.loss, float(args.learning_rate))
+    setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, args.optimizer, args.loss, float(args.learning_rate))
 
     # Doing transfer learning and then fine-tuning, in that order, will ensure a more stable and consistent training.
     # This is because the large gradient updates triggered by randomly initialized weights could wreck the learned weights in the convolutional base if not frozen.
