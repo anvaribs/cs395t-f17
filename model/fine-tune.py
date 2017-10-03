@@ -346,12 +346,14 @@ def train(args):
     val_loss = history_ft.history['val_loss']
 
 
-    results_df = pd.read_csv('model_results.csv')
-    #date,architecture,optimizer,loss,learning_rate,epochs,batch_size,train_acc,train_loss,val_acc,val_loss,model_name
-    datenow = datetime.datetime.today().strftime('%Y-%m-%d_%H:%m')
-    results_df.loc[len(results_df.index)] = [ datenow, args.model_name, args.optimizer, args.loss, args.learning_rate, args.nb_epoch, args.batch_size, \
-                                             acc, loss, val_acc, val_loss, output_name ]
-    results_df.to_csv("model_results.csv")
+
+    # We should implement a checkpointer instead!
+    # results_df = pd.read_csv('model_results.csv')
+    # #date,architecture,optimizer,loss,learning_rate,epochs,batch_size,train_acc,train_loss,val_acc,val_loss,model_name
+    # datenow = datetime.datetime.today().strftime('%Y-%m-%d_%H:%m')
+    # results_df.loc[len(results_df.index)] = [ datenow, args.model_name, args.optimizer, args.loss, args.learning_rate, args.nb_epoch, args.batch_size, \
+    #                                          acc, loss, val_acc, val_loss, output_name ]
+    # results_df.to_csv("model_results.csv")
 
 
 def create_folder_with_classes(basef, input_folder, output_folder, trainfile):
