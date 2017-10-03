@@ -351,25 +351,28 @@ def train(args):
     print("Save Model "+output_name)
     model.save("fitted_models/"+output_name)
 
+
+    plot_training(output_name, model, history_ft)
+
     acc = history_ft.history['acc']
     val_acc = history_ft.history['val_acc']
     loss = history_ft.history['loss']
     val_loss = history_ft.history['val_loss']
 
 
-    print("Save Model results")
-    results_df = pd.read_csv('model_results.csv')
-    print(len(results_df.index))
-    #date,architecture,optimizer,loss,learning_rate,epochs,batch_size,train_acc,train_loss,val_acc,val_loss,model_name
-    datenow = datetime.datetime.today().strftime('%Y-%m-%d_%H:%m')
-    res = [ datenow, args.model_name, args.optimizer, args.loss, args.learning_rate, args.nb_epoch, args.batch_size, acc, loss, val_acc, val_loss, output_name ]
-    print(res)
-    results_df.loc[len(results_df.index)+1] = res 
+    #Diego:  I'm not sure why we are commenting this out?  Or rather what is a checkpointer?
+    #print("Save Model results")
+    #results_df = pd.read_csv('model_results.csv')
+    #print(len(results_df.index))
+    #datenow = datetime.datetime.today().strftime('%Y-%m-%d_%H:%m')
+    #res = [ datenow, args.model_name, args.optimizer, args.loss, args.learning_rate, args.nb_epoch, args.batch_size, acc, loss, val_acc, val_loss, output_name ]
+    #print(res)
+    #results_df.loc[len(results_df.index)+1] = res 
                                              
-    print(results_df)
-    results_df.to_csv("model_results.csv")
+    #print(results_df)
+    #results_df.to_csv("model_results.csv")
 
-    print("Save plots")
+    #print("Save plots")
     #plot_training(output_name,model,history_ft)
 
 
