@@ -337,6 +337,9 @@ def train(args):
     output_name = args.model_name+"_"+args.loss+"_"+args.optimizer+"_lr"+str(args.learning_rate)+"_epochs"+str(nb_epoch)+"_ft.model"
     model.save("fitted_models/"+output_name)
 
+
+    plot_training(output_name, model, history_ft)
+
     acc = history_ft.history['acc']
     val_acc = history_ft.history['val_acc']
     loss = history_ft.history['loss']
@@ -349,8 +352,6 @@ def train(args):
     results_df.loc[len(results_df.index)] = [ datenow, args.model_name, args.optimizer, args.loss, args.learning_rate, args.nb_epoch, args.batch_size, \
                                              acc, loss, val_acc, val_loss, output_name ]
     results_df.to_csv("model_results.csv")
-
-    plot_training(output_name,model,history_ft)
 
 
 def create_folder_with_classes(basef, input_folder, output_folder, trainfile):
