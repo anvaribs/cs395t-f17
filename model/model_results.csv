@@ -1,1 +1,2 @@
-date,architecture,optimizer,loss,learning_rate,epochs,batch_size,train_acc,train_loss,val_acc,val_loss,model_name
+,date,architecture,optimizer,loss,learning_rate,epochs,batch_size,train_acc,train_loss,val_acc,val_loss,model_name
+1,2017-10-03_05:10,inceptionv3,adam,categorical_crossentropy,5e-05,1,128,[0.080954465859825686],[376964.60634851136],[0.0],[371602.0625],inceptionv3_categorical_crossentropy_adam_lr5e-05_epochs1_regL1_ft.model

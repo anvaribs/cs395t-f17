@@ -113,10 +113,13 @@ STEP C: Train our models using GPUs with "screen" so that you may leave the proc
 ##https://askubuntu.com/questions/8653/how-to-keep-processes-running-after-ending-ssh-session
 
 10) screen -S diego395
-11) CUDA_VISIBLE_DEVICES=3 python fine-tune.py --data_dir="../data/yearbook" --input_dir="train"
---valid_dir="valid" --train_file="yearbook_train.txt" --valid_file="yearbook_valid.txt"
---model_name="inceptionv3" > outputresults.xt
 
+If USING microdeep server run either 11a for one experiment or 11b for multiple ( both from within model/ folder )
+11a) CUDA_VISIBLE_DEVICES=3 python fine-tune.py --data_dir="../data/yearbook" --input_dir="train"
+--valid_dir="valid" --train_file="yearbook_train.txt" --valid_file="yearbook_valid.txt"
+--model_name="inceptionv3" 
+
+11a) CUDA_VISIBLE_DEVICES=3 python run_experiments.py
 
 ctrl-A ctrl-D  #to detach process and leave it running in background
 screen -r diego395   #to get back to screen session to check on process

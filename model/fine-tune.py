@@ -13,6 +13,7 @@ from keras.layers import Dense, GlobalAveragePooling2D
 from keras.preprocessing.image import ImageDataGenerator
 from keras import optimizers
 from keras.optimizers import SGD
+from keras import regularizers
 
 import pandas as pd
 from shutil import copyfile
@@ -69,7 +70,7 @@ def setup_to_transfer_learn(model, base_model, optimizer_in, loss_in, learning_r
                   metrics = ['accuracy'])
 
 
-def add_new_last_layer(base_model, nb_classes, FC_SIZE):
+def add_new_last_layer(base_model, nb_classes, FC_SIZE, regularizer, reg_rate):
     """Add last layer to the convnet
 
     Args:
@@ -94,7 +95,14 @@ def add_new_last_layer(base_model, nb_classes, FC_SIZE):
     # print(x.shape)                           #(?, 1024)
 
     # new softmax layer on the output to squeeze the values between [0,1]
-    predictions = Dense(nb_classes, activation='softmax')(x)
+    if regularizer == "none":
+        predictions = Dense(nb_classes, activation='softmax')(x)
+    else:
+        if regularizer == "L1":
+            print("using L1 regularization")
+            #see https://keras.io/regularizers/
+            predictions = Dense(nb_classes, activation='softmax', kernel_regularizer=regularizers.l1(reg_rate) )(x)
+        
     # print("predictions.shape: ")
     print("PREDICTIONS need to be in [0,1].  nb_classes: ", nb_classes, " should be the size of your last layer")
     print(predictions)
@@ -186,6 +194,9 @@ def train(args):
                         '1982', '1983', '1984', '1985', '1986', '1987', '1988', '1989', '1990', '1991', '1992', '1993',
                         '1994', '1995', '1996', '1997', '1998', '1999', '2000', '2001', '2002', '2003', '2004', '2005',
                         '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013']
+
+    if args.input_dir == "train_sub":
+        results = ['1930','1940','1950','1960','1970','1980','1990','2000']
 
     print("nb_train_samples: ", nb_train_samples)
     print("nb_classes: ", nb_classes)
@@ -301,7 +312,9 @@ def train(args):
     )
 
 
-    model = add_new_last_layer(base_model, nb_classes, FC_SIZE)
+   
+
+    model = add_new_last_layer(base_model, nb_classes, FC_SIZE, args.regularizer, args.reg_rate)
 
     # transfer learning
     setup_to_transfer_learn(model, base_model, args.optimizer, args.loss, float(args.learning_rate))
@@ -314,10 +327,10 @@ def train(args):
         validation_steps=nb_val_samples / batch_size,
         class_weight='auto')  # Amin: what is this class_weight?
 
-    output_name = args.model_name + "_" + args.loss + "_" + args.optimizer + "_lr" + str(args.learning_rate) + "_epochs" + str(nb_epoch) + "_tl.model"
+    output_name = args.model_name + "_" + args.loss + "_" + args.optimizer + "_lr" + str(args.learning_rate) + "_epochs" + str(nb_epoch) + "_reg"+args.regularizer+"_tl.model"
     model.save("fitted_models/" + output_name)
 
-    plot_training(output_name, model, history_tl)
+    #plot_training(output_name, model, history_tl)
 
     # fine-tuning
     setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, args.optimizer, args.loss, float(args.learning_rate))
@@ -334,7 +347,8 @@ def train(args):
         validation_steps=nb_val_samples / batch_size,
         class_weight='auto')
 
-    output_name = args.model_name+"_"+args.loss+"_"+args.optimizer+"_lr"+str(args.learning_rate)+"_epochs"+str(nb_epoch)+"_ft.model"
+    output_name = args.model_name + "_" + args.loss + "_" + args.optimizer + "_lr" + str(args.learning_rate) + "_epochs" + str(nb_epoch) + "_reg"+args.regularizer+"_ft.model"
+    print("Save Model "+output_name)
     model.save("fitted_models/"+output_name)
 
     acc = history_ft.history['acc']
@@ -343,14 +357,20 @@ def train(args):
     val_loss = history_ft.history['val_loss']
 
 
+    print("Save Model results")
     results_df = pd.read_csv('model_results.csv')
+    print(len(results_df.index))
     #date,architecture,optimizer,loss,learning_rate,epochs,batch_size,train_acc,train_loss,val_acc,val_loss,model_name
     datenow = datetime.datetime.today().strftime('%Y-%m-%d_%H:%m')
-    results_df.loc[len(results_df.index)] = [ datenow, args.model_name, args.optimizer, args.loss, args.learning_rate, args.nb_epoch, args.batch_size, \
-                                             acc, loss, val_acc, val_loss, output_name ]
+    res = [ datenow, args.model_name, args.optimizer, args.loss, args.learning_rate, args.nb_epoch, args.batch_size, acc, loss, val_acc, val_loss, output_name ]
+    print(res)
+    results_df.loc[len(results_df.index)+1] = res 
+                                             
+    print(results_df)
     results_df.to_csv("model_results.csv")
 
-    plot_training(output_name,model,history_ft)
+    print("Save plots")
+    #plot_training(output_name,model,history_ft)
 
 
 def create_folder_with_classes(basef, input_folder, output_folder, trainfile):
@@ -438,6 +458,8 @@ if __name__ == "__main__":
     a.add_argument("--optimizer", default='rmsprop')
     a.add_argument("--loss", default='categorical_crossentropy')
     a.add_argument("--learning_rate", default=LEARNING_RATE)
+    a.add_argument("--regularizer", default='none')
+    a.add_argument("--reg_rate", default=0)
     a.add_argument("--output_model_file", default="inceptionv3-ft.model")
     a.add_argument("--plot", action="store_true")
 

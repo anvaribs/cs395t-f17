@@ -1,3 +1,13 @@
-architecture,optimizer,loss,learning_rate,epochs,batch_size
-"inceptionv3","rmsprop","categorical_crossentropy",0.00002,3,128
-"inceptionv3","rmsprop","mean_squared_error",0.00002,3,128
+architecture,optimizer,loss,learning_rate,epochs,batch_size,regularizer,reg_rate
+"inceptionv3","adam","categorical_crossentropy",0.00005,1,128,"L1",0.0005
+"inceptionv3","adam","categorical_crossentropy",0.00005,1,128,"none",0
+"inceptionv3","adam","mean_squared_error",0.00005,1,128,"L1",0.0005
+"inceptionv3","adam","mean_squared_error",0.00005,1,128,"none",0
+"inceptionv3","adam","mean_absolute_error",0.00005,1,128,"L1",0.0005
+"inceptionv3","adam","mean_absolute_error",0.00005,1,128,"none",0
+"VGG16","adam","categorical_crossentropy",0.00005,1,128,"L1",0.0005
+"VGG16","adam","categorical_crossentropy",0.00005,1,128,"none",0
+"VGG16","adam","mean_squared_error",0.00005,1,128,"L1",0.0005
+"VGG16","adam","mean_squared_error",0.00005,1,128,"none",0
+"VGG16","adam","mean_absolute_error",0.00005,1,128,"L1",0.0005
+"VGG16","adam","mean_absolute_error",0.00005,1,128,"none",0
