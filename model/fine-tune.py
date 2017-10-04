@@ -433,6 +433,10 @@ def plot_training(modelname,model,history):
     plt.title('Training and validation accuracy')
     plt.legend()
 
+
+    plt.savefig("fitted_models/"+modelname+"_train_val_acc.png")
+    plt.close()
+
     plt.figure()
 
     plt.plot(epochs, loss, 'r.', label = 'Traning Loss')
@@ -440,7 +444,7 @@ def plot_training(modelname,model,history):
     plt.title('Training and validation loss')
     plt.legend()
 
-    plt.savefig("fitted_models/"+modelname+"_train_val_acc_loss.png")
+    plt.savefig("fitted_models/"+modelname+"_train_val_loss.png")
 
     plot_model(model, to_file="fitted_models/"+modelname + '_keras.png')
 
