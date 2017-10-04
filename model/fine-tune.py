@@ -15,6 +15,8 @@ from keras import optimizers
 from keras.optimizers import SGD
 from keras import regularizers
 import keras.backend as K
+from keras.callbacks import Callback
+from keras.callbacks import CSVLogger
 
 import pandas as pd
 from shutil import copyfile
@@ -176,6 +178,27 @@ def setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, optimizer_i
     model.compile(optimizer=optimizer_tf, loss=loss_in,
                   metrics=['acc', 'top_k_categorical_accuracy', mean_L1_distance, min_L1_distance, max_L1_distance])
 
+def confusion_matrix(model_results, truth):
+    '''model_results and truth should be for one-hot format, i.e, have >= 2 columns,
+    where truth is 0/1, and max along each row of model_results is model result
+    '''
+    assert model_results.shape == truth.shape
+    num_outputs = truth.shape[1]
+    confusion_matrix = np.zeros((num_outputs, num_outputs), dtype=np.int32)
+    predictions = np.argmax(model_results,axis=1)
+    assert len(predictions)==truth.shape[0]
+
+    for actual_class in range(num_outputs):
+        idx_examples_this_class = truth[:,actual_class]==1
+        prediction_for_this_class = predictions[idx_examples_this_class]
+        for predicted_class in range(num_outputs):
+            count = np.sum(prediction_for_this_class==predicted_class)
+            confusion_matrix[actual_class, predicted_class] = count
+    assert np.sum(confusion_matrix)==len(truth)
+    assert np.sum(confusion_matrix)==np.sum(truth)
+    return confusion_matrix
+
+
 def train(args):
 
     """Use transfer learning and fine-tuning to train a network on a new dataset"""
@@ -321,9 +344,9 @@ def train(args):
         classes=response_classes
     )
 
-    # label_to_class = train_generator.class_indices
-    # class_to_label= {y: x for x, y in label_to_class.items()}
-    # print(class_to_label)
+    label_to_class = train_generator.class_indices
+    class_to_label= {y: x for x, y in label_to_class.items()}
+    print(class_to_label)
 
 
     validation_generator = test_datagen.flow_from_directory(
@@ -335,12 +358,13 @@ def train(args):
     )
 
 
-   
 
     model = add_new_last_layer(base_model, nb_classes, FC_SIZE, args.regularizer, args.reg_rate)
 
     # transfer learning
     setup_to_transfer_learn(model, base_model, args.optimizer, args.loss, float(args.learning_rate))
+
+    csv_logger = CSVLogger('./fitted_models/training.log',  separator = ";",  append = False)
 
     history_tl = model.fit_generator(
         train_generator,
@@ -348,7 +372,9 @@ def train(args):
         steps_per_epoch=nb_train_samples / batch_size,
         validation_data=validation_generator,
         validation_steps=nb_val_samples / batch_size,
-        class_weight='auto')  # Amin: what is this class_weight?
+        class_weight='auto',
+        callbacks = [csv_logger]
+        )  # Amin: what is this class_weight?
 
     output_name = args.model_name + "_" + args.loss + "_" + args.optimizer + "_lr" + str(args.learning_rate) + "_epochs" + str(nb_epoch) + "_reg"+args.regularizer+"_tl.model"
     model.save("fitted_models/" + output_name)
@@ -447,9 +473,6 @@ def plot_training(modelname,model,history):
     val_acc = history.history['val_acc']
     loss = history.history['loss']
     val_loss = history.history['val_loss']
-    mean_L1 = history.history['mean_L1_distance']
-    val_mean_L1 = history.history['val_mean_L1_distance']
-
 
     epochs = range(len(acc))
 
@@ -470,17 +493,6 @@ def plot_training(modelname,model,history):
     plt.legend()
 
     plt.savefig("fitted_models/"+modelname+"_train_val_loss.png")
-    plt.close()
-
-
-    plt.figure()
-
-    plt.plot(epochs, mean_L1, 'r.', label = 'Traning mean L1 Score')
-    plt.plot(epochs, val_mean_L1, 'r-', label = 'Validation mean L1 Score')
-    plt.title('Training and validation mean L1 Scores')
-    plt.legend()
-
-    plt.savefig("fitted_models/"+modelname+"_train_val_mean_L1.png")
     plt.close()
 
     plot_model(model, to_file="fitted_models/"+modelname + '_keras.png')
