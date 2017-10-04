@@ -447,6 +447,9 @@ def plot_training(modelname,model,history):
     val_acc = history.history['val_acc']
     loss = history.history['loss']
     val_loss = history.history['val_loss']
+    mean_L1 = history.history['mean_L1_distance']
+    val_mean_L1 = history.history['val_mean_L1_distance']
+
 
     epochs = range(len(acc))
 
@@ -467,6 +470,17 @@ def plot_training(modelname,model,history):
     plt.legend()
 
     plt.savefig("fitted_models/"+modelname+"_train_val_loss.png")
+    plt.close()
+
+
+    plt.figure()
+
+    plt.plot(epochs, mean_L1, 'r.', label = 'Traning mean L1 Score')
+    plt.plot(epochs, val_mean_L1, 'r-', label = 'Validation mean L1 Score')
+    plt.title('Training and validation mean L1 Scores')
+    plt.legend()
+
+    plt.savefig("fitted_models/"+modelname+"_train_val_mean_L1.png")
     plt.close()
 
     plot_model(model, to_file="fitted_models/"+modelname + '_keras.png')
