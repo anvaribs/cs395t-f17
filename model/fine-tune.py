@@ -15,8 +15,7 @@ from keras import optimizers
 from keras.optimizers import SGD
 from keras import regularizers
 import keras.backend as K
-from keras.callbacks import Callback
-from keras.callbacks import CSVLogger
+from keras.callbacks import Callback, CSVLogger, ModelCheckpoint
 
 import pandas as pd
 from shutil import copyfile
@@ -24,7 +23,7 @@ from shutil import copyfile
 from keras.utils import plot_model
 import code  # https://www.digitalocean.com/community/tutorials/how-to-debug-python-with-an-interactive-console
 import datetime
-
+   
 
 #default for inceptionv3
 ARCHITECTURE = "inceptionv3"
@@ -364,8 +363,8 @@ def train(args):
     # transfer learning
     setup_to_transfer_learn(model, base_model, args.optimizer, args.loss, float(args.learning_rate))
 
-    csv_logger = CSVLogger('./fitted_models/training.log',  separator = ";",  append = False)
-
+    
+    checkpointer = ModelCheckpoint(filepath='./fitted_models/trained_models', verbose=1, save_best_only=False)
     history_tl = model.fit_generator(
         train_generator,
         epochs=nb_epoch,
@@ -373,7 +372,7 @@ def train(args):
         validation_data=validation_generator,
         validation_steps=nb_val_samples / batch_size,
         class_weight='auto',
-        callbacks = [csv_logger]
+        callbacks = [checkpointer]
         )  # Amin: what is this class_weight?
 
     output_name = args.model_name + "_" + args.loss + "_" + args.optimizer + "_lr" + str(args.learning_rate) + "_epochs" + str(nb_epoch) + "_reg"+args.regularizer+"_tl.model"
