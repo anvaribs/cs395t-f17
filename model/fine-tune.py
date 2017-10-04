@@ -330,7 +330,7 @@ def train(args):
     output_name = args.model_name + "_" + args.loss + "_" + args.optimizer + "_lr" + str(args.learning_rate) + "_epochs" + str(nb_epoch) + "_reg"+args.regularizer+"_tl.model"
     model.save("fitted_models/" + output_name)
 
-    #plot_training(output_name, model, history_tl)
+    plot_training(output_name, model, history_tl)
 
     # fine-tuning
     setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, args.optimizer, args.loss, float(args.learning_rate))
