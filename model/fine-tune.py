@@ -14,6 +14,14 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras import optimizers
 from keras.optimizers import SGD
 from keras import regularizers
+<<<<<<< HEAD
+import keras.backend as K
+from keras.callbacks import Callback, CSVLogger, ModelCheckpoint
+from predict import predict
+
+=======
+import keras.backend as K # added a comment just to push
+>>>>>>> 1c182594d06937eb1b382f919ecd45fc2476f527
 
 import pandas as pd
 from shutil import copyfile
@@ -31,6 +39,19 @@ BAT_SIZE = 128
 LEARNING_RATE = 1e-4
 # FC_SIZE = 1024
 # NB_LAYERS_TO_FREEZE = 172
+
+
+def mean_L1_distance(y_true, y_pred):
+    return K.mean(K.abs(K.argmax(y_pred,axis = -1) - K.argmax(y_true,axis = -1)), axis=-1)
+
+def min_L1_distance(y_true, y_pred):
+    return K.min(K.abs(K.argmax(y_pred,axis = -1) - K.argmax(y_true,axis = -1)), axis=-1)
+
+def max_L1_distance(y_true, y_pred):
+    return K.max(K.abs(K.argmax(y_pred,axis = -1) - K.argmax(y_true,axis = -1)), axis=-1)
+
+def std_L1_distance(y_true, y_pred):
+    return K.std(K.abs(K.argmax(y_pred,axis = -1) - K.argmax(y_true,axis = -1)), axis=-1)
 
 
 def get_nb_files(directory):
@@ -67,7 +88,7 @@ def setup_to_transfer_learn(model, base_model, optimizer_in, loss_in, learning_r
 
     model.compile(optimizer = optimizer_tf,
                   loss = loss_in,
-                  metrics = ['accuracy'])
+                  metrics=['acc', 'top_k_categorical_accuracy', mean_L1_distance, min_L1_distance, max_L1_distance])
 
 
 def add_new_last_layer(base_model, nb_classes, FC_SIZE, regularizer, reg_rate):
@@ -159,7 +180,28 @@ def setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, optimizer_i
         optimizer_tf = optimizers.Adagrad(lr = learning_rate/10)
       
     # We should use lower learning rate when fine-tuning. learning_rate /10 is a good start.
-    model.compile(optimizer=optimizer_tf, loss=loss_in, metrics=['accuracy'])
+    model.compile(optimizer=optimizer_tf, loss=loss_in,
+                  metrics=['acc', 'top_k_categorical_accuracy', mean_L1_distance, min_L1_distance, max_L1_distance])
+
+def confusion_matrix(model_results, truth):
+    '''model_results and truth should be for one-hot format, i.e, have >= 2 columns,
+    where truth is 0/1, and max along each row of model_results is model result
+    '''
+    assert model_results.shape == truth.shape
+    num_outputs = truth.shape[1]
+    confusion_matrix = np.zeros((num_outputs, num_outputs), dtype=np.int32)
+    predictions = np.argmax(model_results,axis=1)
+    assert len(predictions)==truth.shape[0]
+
+    for actual_class in range(num_outputs):
+        idx_examples_this_class = truth[:,actual_class]==1
+        prediction_for_this_class = predictions[idx_examples_this_class]
+        for predicted_class in range(num_outputs):
+            count = np.sum(prediction_for_this_class==predicted_class)
+            confusion_matrix[actual_class, predicted_class] = count
+    assert np.sum(confusion_matrix)==len(truth)
+    assert np.sum(confusion_matrix)==np.sum(truth)
+    return confusion_matrix
 
 def train(args):
 
@@ -275,6 +317,7 @@ def train(args):
         zoom_range=0.2,
         horizontal_flip=True
     )
+
     # test_datagen = ImageDataGenerator(
     #     preprocessing_function=preprocess_input,
     #     rotation_range=30,
@@ -301,13 +344,20 @@ def train(args):
         args.data_dir + "/" + args.input_dir + "_" + args.model_name,
         target_size=(IM_WIDTH, IM_HEIGHT),
         batch_size=batch_size,
+        class_mode='categorical',
         classes=response_classes
     )
+
+    # label_to_class = train_generator.class_indices
+    # class_to_label= {y: x for x, y in label_to_class.items()}
+    # print(class_to_label)
+
 
     validation_generator = test_datagen.flow_from_directory(
         args.data_dir + "/" + args.valid_dir + "_" + args.model_name,
         target_size=(IM_WIDTH, IM_HEIGHT),
         batch_size=batch_size,
+        class_mode= 'categorical',
         classes=response_classes
     )
 
@@ -330,7 +380,8 @@ def train(args):
     output_name = args.model_name + "_" + args.loss + "_" + args.optimizer + "_lr" + str(args.learning_rate) + "_epochs" + str(nb_epoch) + "_reg"+args.regularizer+"_tl.model"
     model.save("fitted_models/" + output_name)
 
-    #plot_training(output_name, model, history_tl)
+    print("Save transfer learning plots ...")
+    plot_training(output_name, model, history_tl)
 
     # fine-tuning
     setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, args.optimizer, args.loss, float(args.learning_rate))
@@ -351,7 +402,7 @@ def train(args):
     print("Save Model "+output_name)
     model.save("fitted_models/"+output_name)
 
-
+    print("Save fine-tuning plots ...")
     plot_training(output_name, model, history_ft)
 
     acc = history_ft.history['acc']
@@ -372,8 +423,6 @@ def train(args):
     #print(results_df)
     #results_df.to_csv("model_results.csv")
 
-    #print("Save plots")
-    #plot_training(output_name,model,history_ft)
 
 
 def create_folder_with_classes(basef, input_folder, output_folder, trainfile):
@@ -425,6 +474,9 @@ def plot_training(modelname,model,history):
     val_acc = history.history['val_acc']
     loss = history.history['loss']
     val_loss = history.history['val_loss']
+    mean_L1 = history.history['mean_L1_distance']
+    val_mean_L1 = history.history['val_mean_L1_distance']
+
 
     epochs = range(len(acc))
 
@@ -445,8 +497,36 @@ def plot_training(modelname,model,history):
     plt.legend()
 
     plt.savefig("fitted_models/"+modelname+"_train_val_loss.png")
+    plt.close()
+
+
+    plt.figure()
+
+    plt.plot(epochs, mean_L1, 'r.', label = 'Traning mean L1 Score')
+    plt.plot(epochs, val_mean_L1, 'r-', label = 'Validation mean L1 Score')
+    plt.title('Training and validation mean L1 Scores')
+    plt.legend()
+
+    plt.savefig("fitted_models/"+modelname+"_train_val_mean_L1.png")
+    plt.close()
 
     plot_model(model, to_file="fitted_models/"+modelname + '_keras.png')
+
+def evaluate(model):
+
+    train_datagen = ImageDataGenerator(
+        preprocessing_function=preprocess_input,
+        rotation_range=30,
+        width_shift_range=0.2,
+        height_shift_range=0.2,
+        shear_range=0.2,
+        zoom_range=0.2,
+        horizontal_flip=True
+    )
+
+
+
+    output = model.predict(train_datagen, batch_size=None, verbose=0, steps=None)
 
 
 if __name__ == "__main__":
@@ -457,7 +537,7 @@ if __name__ == "__main__":
     a.add_argument("--data_dir", default='../data/yearbook')
     a.add_argument("--input_dir", default="train")
     a.add_argument("--valid_dir", default="valid")
-    a.add_argument("--model_name", default="VGG16")
+    a.add_argument("--model_name", default="inceptionv3")
     a.add_argument("--train_file", default="yearbook_train.txt")
     a.add_argument("--valid_file", default="yearbook_valid.txt")
     a.add_argument("--nb_epoch", default=NB_EPOCHS)
@@ -475,7 +555,8 @@ if __name__ == "__main__":
         print("directory to data does not exist")
         sys.exit(1)
 
-    train(args)
+    model = train(args)
+    evaluate(model, args)  # this is mainly used for confusion matr
     # Using TensorFlow backend.
     # Found 22840 images belonging to 2 classes.
     # Found 5009 images belonging to 2 classes.
