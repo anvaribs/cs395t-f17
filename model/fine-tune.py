@@ -14,10 +14,14 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras import optimizers
 from keras.optimizers import SGD
 from keras import regularizers
+<<<<<<< HEAD
 import keras.backend as K
 from keras.callbacks import Callback, CSVLogger, ModelCheckpoint
 from predict import predict
 
+=======
+import keras.backend as K # added a comment just to push
+>>>>>>> 1c182594d06937eb1b382f919ecd45fc2476f527
 
 import pandas as pd
 from shutil import copyfile
