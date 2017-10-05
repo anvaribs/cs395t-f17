@@ -14,14 +14,14 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras import optimizers
 from keras.optimizers import SGD
 from keras import regularizers
-<<<<<<< HEAD
+from keras import losses
+
 import keras.backend as K
 from keras.callbacks import Callback, CSVLogger, ModelCheckpoint
 from predict import predict
 
-=======
-import keras.backend as K # added a comment just to push
->>>>>>> 1c182594d06937eb1b382f919ecd45fc2476f527
+
+
 
 import pandas as pd
 from shutil import copyfile
@@ -54,6 +54,23 @@ def std_L1_distance(y_true, y_pred):
     return K.std(K.abs(K.argmax(y_pred,axis = -1) - K.argmax(y_true,axis = -1)), axis=-1)
 
 
+def categorical_crossentropy_mean_squared_error(y_true, y_pred):
+    year_pred = K.argmax(y_pred,axis = -1)
+    year_true = K.argmax(y_true,axis = -1)
+    return return K.categorical_crossentropy(y_true, y_pred) + lambda * K.mean(K.square(year_pred - year_true), axis=-1)
+
+
+
+
+def categorical_crossentropy_mean_absoulute_error(y_true, y_pred):
+    year_pred = K.argmax(y_pred,axis = -1)
+    year_true = K.argmax(y_true,axis = -1)
+    return return K.categorical_crossentropy(y_true, y_pred) + lambda * K.mean(K.abs(year_pred - year_true), axis=-1)
+
+
+
+
+
 def get_nb_files(directory):
     """Get number of files by searching directory recursively"""
     if not os.path.exists(directory):
@@ -77,16 +94,16 @@ def setup_to_transfer_learn(model, base_model, optimizer_in, loss_in, learning_r
       'after freezing the conv base:', len(model.trainable_weights))
     
     if optimizer_in == 'rmsprop':
-        optimizer_tf = optimizers.RMSprop(lr = learning_rate)
+        optimizer_tl = optimizers.RMSprop(lr = learning_rate)
     elif optimizer_in == 'adam':
-        optimizer_tf = optimizers.Adam(lr = learning_rate)
+        optimizer_tl = optimizers.Adam(lr = learning_rate)
     elif optimizer_in == 'sgd':
-        optimizer_tf = optimizers.SGD(lr = learning_rate, momentum=9.0, nesterov=True)
+        optimizer_tl = optimizers.SGD(lr = learning_rate, momentum=9.0, nesterov=True)
     elif optimizer_in == 'adagrad':
-        optimizer_tf = optimizers.Adagrad(lr = learning_rate)
+        optimizer_tl = optimizers.Adagrad(lr = learning_rate)
 
 
-    model.compile(optimizer = optimizer_tf,
+    model.compile(optimizer = optimizer_tl,
                   loss = loss_in,
                   metrics=['acc', 'top_k_categorical_accuracy', mean_L1_distance, min_L1_distance, max_L1_distance])
 
@@ -171,16 +188,16 @@ def setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, optimizer_i
       'during the fine-tuning step:', len(model.trainable_weights))
 
     if optimizer_in == 'rmsprop':
-        optimizer_tf = optimizers.RMSprop(lr = learning_rate/10)
+        optimizer_ft = optimizers.RMSprop(lr = learning_rate/10)
     elif optimizer_in == 'adam':
-        optimizer_tf = optimizers.Adam(lr = learning_rate/10)
+        optimizer_ft = optimizers.Adam(lr = learning_rate/10)
     elif optimizer_in == 'sgd':
-        optimizer_tf = optimizers.SGD(lr = learning_rate/10, momentum=9.0, nesterov=True)
+        optimizer_ft = optimizers.SGD(lr = learning_rate/10, momentum=9.0, nesterov=True)
     elif optimizer_in == 'adagrad':
-        optimizer_tf = optimizers.Adagrad(lr = learning_rate/10)
+        optimizer_ft = optimizers.Adagrad(lr = learning_rate/10)
       
     # We should use lower learning rate when fine-tuning. learning_rate /10 is a good start.
-    model.compile(optimizer=optimizer_tf, loss=loss_in,
+    model.compile(optimizer=optimizer_ft, loss=loss_in,
                   metrics=['acc', 'top_k_categorical_accuracy', mean_L1_distance, min_L1_distance, max_L1_distance])
 
 def confusion_matrix(model_results, truth):
