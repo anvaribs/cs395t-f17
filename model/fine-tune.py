@@ -39,6 +39,7 @@ BAT_SIZE = 128
 LEARNING_RATE = 1e-4
 # FC_SIZE = 1024
 # NB_LAYERS_TO_FREEZE = 172
+LAMBDA = 1.0
 
 
 def mean_L1_distance(y_true, y_pred):
@@ -54,18 +55,36 @@ def std_L1_distance(y_true, y_pred):
     return K.std(K.abs(K.argmax(y_pred,axis = -1) - K.argmax(y_true,axis = -1)), axis=-1)
 
 
+
+
+
 def categorical_crossentropy_mean_squared_error(y_true, y_pred):
-    year_pred = K.argmax(y_pred,axis = -1)
-    year_true = K.argmax(y_true,axis = -1)
-    return return K.categorical_crossentropy(y_true, y_pred) + lambda * K.mean(K.square(year_pred - year_true), axis=-1)
+    year_pred = K.cast(K.argmax(y_pred,axis = -1), 'float32')
+    year_true = K.cast(K.argmax(y_true,axis = -1), 'float32')
+    return  K.categorical_crossentropy(y_true, y_pred) + LAMBDA * K.square(year_pred - year_true)
 
 
 
+def test_loss():
+    y_a = K.variable(np.random.random((6, 7)))
+    y_b = K.variable(np.random.random((6, 7)))
 
-def categorical_crossentropy_mean_absoulute_error(y_true, y_pred):
-    year_pred = K.argmax(y_pred,axis = -1)
-    year_true = K.argmax(y_true,axis = -1)
-    return return K.categorical_crossentropy(y_true, y_pred) + lambda * K.mean(K.abs(year_pred - year_true), axis=-1)
+    print(K.eval(y_a).shape)
+    print(K.eval(y_b).shape)
+
+    print(K.eval(y_a))
+
+    print(K.eval(K.abs(K.argmax(y_a,axis = -1))).shape)
+    print (K.eval(K.abs(K.argmax(y_a,axis = -1))))
+
+    output = categorical_crossentropy_mean_squared_error(y_a, y_b)
+    print('mean_L1:')
+    print(K.eval(output).shape)
+    print(K.eval(output))
+    assert K.eval(output).shape == (6,)
+
+
+
 
 
 
@@ -577,3 +596,5 @@ if __name__ == "__main__":
     # Using TensorFlow backend.
     # Found 22840 images belonging to 2 classes.
     # Found 5009 images belonging to 2 classes.
+
+    # test_loss()
