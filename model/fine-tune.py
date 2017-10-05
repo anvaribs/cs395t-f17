@@ -15,6 +15,9 @@ from keras import optimizers
 from keras.optimizers import SGD
 from keras import regularizers
 import keras.backend as K
+from keras.callbacks import Callback, CSVLogger, ModelCheckpoint
+from predict import predict
+
 
 import pandas as pd
 from shutil import copyfile
@@ -175,6 +178,26 @@ def setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, optimizer_i
     # We should use lower learning rate when fine-tuning. learning_rate /10 is a good start.
     model.compile(optimizer=optimizer_tf, loss=loss_in,
                   metrics=['acc', 'top_k_categorical_accuracy', mean_L1_distance, min_L1_distance, max_L1_distance])
+
+def confusion_matrix(model_results, truth):
+    '''model_results and truth should be for one-hot format, i.e, have >= 2 columns,
+    where truth is 0/1, and max along each row of model_results is model result
+    '''
+    assert model_results.shape == truth.shape
+    num_outputs = truth.shape[1]
+    confusion_matrix = np.zeros((num_outputs, num_outputs), dtype=np.int32)
+    predictions = np.argmax(model_results,axis=1)
+    assert len(predictions)==truth.shape[0]
+
+    for actual_class in range(num_outputs):
+        idx_examples_this_class = truth[:,actual_class]==1
+        prediction_for_this_class = predictions[idx_examples_this_class]
+        for predicted_class in range(num_outputs):
+            count = np.sum(prediction_for_this_class==predicted_class)
+            confusion_matrix[actual_class, predicted_class] = count
+    assert np.sum(confusion_matrix)==len(truth)
+    assert np.sum(confusion_matrix)==np.sum(truth)
+    return confusion_matrix
 
 def train(args):
 
@@ -485,6 +508,22 @@ def plot_training(modelname,model,history):
 
     plot_model(model, to_file="fitted_models/"+modelname + '_keras.png')
 
+def evaluate(model):
+
+    train_datagen = ImageDataGenerator(
+        preprocessing_function=preprocess_input,
+        rotation_range=30,
+        width_shift_range=0.2,
+        height_shift_range=0.2,
+        shear_range=0.2,
+        zoom_range=0.2,
+        horizontal_flip=True
+    )
+
+
+
+    output = model.predict(train_datagen, batch_size=None, verbose=0, steps=None)
+
 
 if __name__ == "__main__":
     # SAMPLE CALLs
@@ -512,7 +551,8 @@ if __name__ == "__main__":
         print("directory to data does not exist")
         sys.exit(1)
 
-    train(args)
+    model = train(args)
+    evaluate(model, args)  # this is mainly used for confusion matr
     # Using TensorFlow backend.
     # Found 22840 images belonging to 2 classes.
     # Found 5009 images belonging to 2 classes.
