@@ -65,10 +65,18 @@ def categorical_crossentropy_mean_squared_error(y_true, y_pred):
 
 
 
+def pure_mean_squared_error(y_true, y_pred):
+    year_pred = K.cast(K.argmax(y_pred,axis = -1), 'float32')
+    year_true = K.cast(K.argmax(y_true,axis = -1), 'float32')
+    return  LAMBDA * K.square(year_pred - year_true)
+
+
+
 def categorical_crossentropy_mean_absoulute_error(y_true, y_pred):
     year_pred = K.cast(K.argmax(y_pred,axis = -1), 'float32')
     year_true = K.cast(K.argmax(y_true,axis = -1), 'float32')
     return  K.categorical_crossentropy(y_true, y_pred) + LAMBDA * K.abs(year_pred - year_true)
+
 
 
 
