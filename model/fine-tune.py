@@ -9,19 +9,18 @@ from keras import __version__
 # from keras.applications.vgg16 import VGG16
 from keras.applications import vgg16, vgg19, inception_v3, xception, resnet50
 from keras.models import Model
+from keras.models import load_model
 from keras.layers import Dense, GlobalAveragePooling2D
 from keras.preprocessing.image import ImageDataGenerator
 from keras import optimizers
 from keras.optimizers import SGD
 from keras import regularizers
-<<<<<<< HEAD
 import keras.backend as K
 from keras.callbacks import Callback, CSVLogger, ModelCheckpoint
 from predict import predict
 
-=======
 import keras.backend as K # added a comment just to push
->>>>>>> 1c182594d06937eb1b382f919ecd45fc2476f527
+
 
 import pandas as pd
 from shutil import copyfile
@@ -317,7 +316,7 @@ def train(args):
         zoom_range=0.2,
         horizontal_flip=True
     )
-
+    
     # test_datagen = ImageDataGenerator(
     #     preprocessing_function=preprocess_input,
     #     rotation_range=30,
@@ -512,21 +511,26 @@ def plot_training(modelname,model,history):
 
     plot_model(model, to_file="fitted_models/"+modelname + '_keras.png')
 
-def evaluate(model):
+def evaluate(model_name):
 
-    train_datagen = ImageDataGenerator(
-        preprocessing_function=preprocess_input,
-        rotation_range=30,
-        width_shift_range=0.2,
-        height_shift_range=0.2,
-        shear_range=0.2,
-        zoom_range=0.2,
-        horizontal_flip=True
-    )
+    # preprocess_input = base_model.preprocess_input
 
 
+    # train_datagen = ImageDataGenerator(
+    #     preprocessing_function=preprocess_input,
+    #     rotation_range=30,
+    #     width_shift_range=0.2,
+    #     height_shift_range=0.2,
+    #     shear_range=0.2,
+    #     zoom_range=0.2,
+    #     horizontal_flip=True
+    img=imread("./data/yearbook/test/F/*")
+    import pdb; pdb.set_trace()
+    target_size = (299, 299) #fixed size for InceptionV3 architecture 
+    model = load_model("./fitted_models" + modelname)
 
-    output = model.predict(train_datagen, batch_size=None, verbose=0, steps=None)
+    output = predict(model, img, target_size)
+
 
 
 if __name__ == "__main__":
@@ -555,8 +559,11 @@ if __name__ == "__main__":
         print("directory to data does not exist")
         sys.exit(1)
 
-    model = train(args)
-    evaluate(model, args)  # this is mainly used for confusion matr
+    # model = train(args)
+    model_name = "inceptionv3_categorical_crossentropy_rmsprop_lr0.0001_epochs1_regnone_tl.model_train_val_acc.png"
+    evaluate(model_name)  # this is mainly used for confusion matr
+    
+
     # Using TensorFlow backend.
     # Found 22840 images belonging to 2 classes.
     # Found 5009 images belonging to 2 classes.
