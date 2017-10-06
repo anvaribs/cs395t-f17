@@ -270,7 +270,7 @@ def setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, optimizer_i
         optimizer_ft = optimizers.Adagrad(lr = learning_rate/10)
       
     # We should use lower learning rate when fine-tuning. learning_rate /10 is a good start.
-    model.compile(optimizer=optimizer_ft, loss=loss_in,
+    model.compile(optimizer=optimizers.SGD(lr = learning_rate/10, momentum=9.0), loss=loss_in,
                   metrics=['acc', 'top_k_categorical_accuracy', mean_L1_distance, min_L1_distance, max_L1_distance])
 
 def confusion_matrix(model_results, truth):
@@ -410,7 +410,7 @@ def train(args):
         height_shift_range=0.2,
         shear_range=0.2,
         zoom_range=0.2,
-        horizontal_flip=True
+        horizontal_flip=True,
     )
 
     # test_datagen = ImageDataGenerator(
@@ -471,9 +471,9 @@ def train(args):
     history_tl = model.fit_generator(
         train_generator,
         epochs=nb_epoch,
-        steps_per_epoch=nb_train_samples / batch_size,
+        steps_per_epoch=nb_train_samples // batch_size,
         validation_data=validation_generator,
-        validation_steps=nb_val_samples / batch_size,
+        validation_steps=nb_val_samples // batch_size,
         callbacks=[csv_logger_tl,checkpointer_tl, early_stopping_tl],
         class_weight='auto')  # Amin: what is this class_weight?
 
