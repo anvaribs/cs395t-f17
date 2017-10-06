@@ -317,7 +317,7 @@ def train(args):
     batch_size = int(args.batch_size)
 
     LAMBDA = int(args.lambda_val)
-    decay = int(args.decay)
+    decay = float(args.decay)
 
     # for now need to force classes of validation to be same of train somehow
     response_classes = ['1905', '1906', '1908', '1909', '1910', '1911', '1912', '1913', '1914', '1915', '1916', '1919',
