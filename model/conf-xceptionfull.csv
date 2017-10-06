@@ -11,3 +11,11 @@ architecture,optimizer,loss,learning_rate,epochs,batch_size,regularizer,reg_rate
 "Xception","rmsprop","categorical_crossentropy",0.0001,50,128,"none",0,.9,1
 "Xception","rmsprop","categorical_crossentropy",0.00001,50,128,"none",0,0,1
 "Xception","rmsprop","categorical_crossentropy",0.00001,50,128,"none",0,.9,1
+"Xception","adam","categorical_crossentropy_mean_absoulute_error",0.00001,50,128,"none",0,0,1
+"Xception","adam","categorical_crossentropy_mean_absoulute_error",0.00001,50,128,"none",0,.9,1
+"Xception","rmsprop","categorical_crossentropy_mean_absoulute_error",0.00001,50,128,"none",0,0,1
+"Xception","rmsprop","categorical_crossentropy_mean_absoulute_error",0.00001,50,128,"none",0,.9,1
+"Xception","adam","categorical_crossentropy_mean_squared_error",0.00001,50,128,"none",0,0,1
+"Xception","adam","categorical_crossentropy_mean_squared_error",0.00001,50,128,"none",0,.9,1
+"Xception","rmsprop","categorical_crossentropy_mean_squared_error",0.00001,50,128,"none",0,0,1
+"Xception","rmsprop","categorical_crossentropy_mean_squared_error",0.00001,50,128,"none",0,.9,1
