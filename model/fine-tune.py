@@ -2,6 +2,7 @@ import os
 import sys
 import glob
 import argparse
+import numpy as np
 import matplotlib     #i was getting the following error in plot_training()  https://github.com/matplotlib/matplotlib/issues/3466
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
@@ -17,6 +18,7 @@ from keras import optimizers
 from keras.optimizers import SGD
 from keras import regularizers
 from keras import losses
+import keras.losses
 
 import keras.backend as K
 from keras.callbacks import Callback, CSVLogger, ModelCheckpoint
@@ -38,7 +40,7 @@ BAT_SIZE = 128
 LEARNING_RATE = 1e-4
 # FC_SIZE = 1024
 # NB_LAYERS_TO_FREEZE = 172
-LAMBDA = 1.0
+# LAMBDA = K.cast_to_floatx(1.0)
 
 
 def mean_L1_distance(y_true, y_pred):
@@ -57,29 +59,58 @@ def std_L1_distance(y_true, y_pred):
 
 
 
-def categorical_crossentropy_mean_squared_error(y_true, y_pred):
-    year_pred = K.cast(K.argmax(y_pred,axis = -1), 'float32')
-    year_true = K.cast(K.argmax(y_true,axis = -1), 'float32')
-    return  K.categorical_crossentropy(y_true, y_pred) + LAMBDA * K.square(year_pred - year_true)
+def categorical_crossentropy_mean_squared_error_1(y_true, y_pred):
+    year_pred = K.cast(K.argmax(y_pred,axis = -1), K.floatx())
+    year_true = K.cast(K.argmax(y_true,axis = -1), K.floatx())
+
+    return  (K.categorical_crossentropy(y_true, y_pred) + K.cast_to_floatx(1.0) * K.square(year_pred - year_true))
+
+def categorical_crossentropy_mean_squared_error_01(y_true, y_pred):
+    year_pred = K.cast(K.argmax(y_pred,axis = -1), K.floatx())
+    year_true = K.cast(K.argmax(y_true,axis = -1), K.floatx())
+
+    return  (K.categorical_crossentropy(y_true, y_pred) + K.cast_to_floatx(0.1) * K.square(year_pred - year_true))
+
+def categorical_crossentropy_mean_squared_error_001(y_true, y_pred):
+    year_pred = K.cast(K.argmax(y_pred,axis = -1), K.floatx())
+    year_true = K.cast(K.argmax(y_true,axis = -1), K.floatx())
+
+    return  (K.categorical_crossentropy(y_true, y_pred) + K.cast_to_floatx(0.01) * K.square(year_pred - year_true))
 
 
 
 def pure_mean_squared_error(y_true, y_pred):
     year_pred = K.cast(K.argmax(y_pred,axis = -1), 'float32')
     year_true = K.cast(K.argmax(y_true,axis = -1), 'float32')
-    return  LAMBDA * K.square(year_pred - year_true)
+    return (LAMBDA * K.square(year_pred - year_true))
 
 
 
-def categorical_crossentropy_mean_absoulute_error(y_true, y_pred):
+def categorical_crossentropy_mean_absoulute_error_1(y_true, y_pred):
     year_pred = K.cast(K.argmax(y_pred,axis = -1), 'float32')
     year_true = K.cast(K.argmax(y_true,axis = -1), 'float32')
-    return  K.categorical_crossentropy(y_true, y_pred) + LAMBDA * K.abs(year_pred - year_true)
+    return  (K.categorical_crossentropy(y_true, y_pred) + K.cast_to_floatx(1.0) * K.abs(year_pred - year_true))
 
+def categorical_crossentropy_mean_absoulute_error_01(y_true, y_pred):
+    year_pred = K.cast(K.argmax(y_pred,axis = -1), 'float32')
+    year_true = K.cast(K.argmax(y_true,axis = -1), 'float32')
+    return  (K.categorical_crossentropy(y_true, y_pred) + K.cast_to_floatx(0.1) * K.abs(year_pred - year_true))
+
+def categorical_crossentropy_mean_absoulute_error_001(y_true, y_pred):
+    year_pred = K.cast(K.argmax(y_pred,axis = -1), 'float32')
+    year_true = K.cast(K.argmax(y_true,axis = -1), 'float32')
+    return  (K.categorical_crossentropy(y_true, y_pred) + K.cast_to_floatx(0.01) * K.abs(year_pred - year_true))
+
+
+
+keras.losses.categorical_crossentropy_mean_squared_error_1 = categorical_crossentropy_mean_squared_error_1
+keras.losses.categorical_crossentropy_mean_squared_error_01 = categorical_crossentropy_mean_squared_error_01
+keras.losses.categorical_crossentropy_mean_squared_error_001 = categorical_crossentropy_mean_squared_error_001
 
 
 
 def test_loss():
+    np.random.seed(1)
     y_a = K.variable(np.random.random((6, 7)))
     y_b = K.variable(np.random.random((6, 7)))
 
@@ -87,14 +118,23 @@ def test_loss():
     print(K.eval(y_b).shape)
 
     print(K.eval(y_a))
-
-    print(K.eval(K.abs(K.argmax(y_a,axis = -1))).shape)
-    print (K.eval(K.abs(K.argmax(y_a,axis = -1))))
-
+    # print(K.eval(K.abs(K.argmax(y_a,axis = -1))).shape)
+    # print (K.eval(K.abs(K.argmax(y_a,axis = -1))))
+    output1 = losses.categorical_crossentropy(y_a, y_b)
+    output2 = pure_mean_squared_error(y_a, y_b)
     output = categorical_crossentropy_mean_squared_error(y_a, y_b)
+    # output_mse = pure_mean_squared_error(y_a, y_b)
     print('mean_L1:')
     print(K.eval(output).shape)
-    print(K.eval(output))
+    print('cross:', K.eval(output1))
+    print('mse: ', K.eval(output2))
+
+    print('total: ', K.eval(output))
+    # print('total_mse:',K.eval(output_mse))
+    # print('cross_entropy:', K.eval(output1))
+    # print('mse: ', K.eval(output2))
+
+
     assert K.eval(output).shape == (6,)
 
 
@@ -193,7 +233,7 @@ def setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, optimizer_i
     Args:
       model: keras model
     """
-    
+
     print('Number of trainable weight tensors '
       'before starting the fine-tuning step:', len(model.trainable_weights))
 
@@ -277,7 +317,7 @@ def train(args):
     batch_size = int(args.batch_size)
 
     LAMBDA = int(args.lambda_val)
-    decay = int(args.decay)
+    decay = float(args.decay)
 
     # for now need to force classes of validation to be same of train somehow
     response_classes = ['1905', '1906', '1908', '1909', '1910', '1911', '1912', '1913', '1914', '1915', '1916', '1919',
@@ -614,7 +654,7 @@ if __name__ == "__main__":
     a.add_argument("--nb_epoch", default=NB_EPOCHS)
     a.add_argument("--batch_size", default=BAT_SIZE)
     a.add_argument("--optimizer", default='rmsprop')
-    a.add_argument("--loss", default='categorical_crossentropy')
+    a.add_argument("--loss", default= 'categorical_crossentropy')
     a.add_argument("--learning_rate", default=LEARNING_RATE)
     a.add_argument("--regularizer", default='none')
     a.add_argument("--reg_rate", default=0)
@@ -634,4 +674,6 @@ if __name__ == "__main__":
     # Found 22840 images belonging to 2 classes.
     # Found 5009 images belonging to 2 classes.
 
+
     # test_loss()
+
