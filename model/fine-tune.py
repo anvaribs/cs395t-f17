@@ -31,7 +31,7 @@ from keras.utils import plot_model
 import code  # https://www.digitalocean.com/community/tutorials/how-to-debug-python-with-an-interactive-console
 import datetime
 import pdb
-
+from sklearn.metrics import confusion_matrix
 
 #default for inceptionv3
 ARCHITECTURE = "inceptionv3"
@@ -185,25 +185,6 @@ def setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, optimizer_i
     model.compile(optimizer=optimizer_tf, loss=loss_in,
                   metrics=['acc', 'top_k_categorical_accuracy', mean_L1_distance, min_L1_distance, max_L1_distance])
 
-def confusion_matrix(model_results, truth):
-    '''model_results and truth should be for one-hot format, i.e, have >= 2 columns,
-    where truth is 0/1, and max along each row of model_results is model result
-    '''
-    assert model_results.shape == truth.shape
-    num_outputs = truth.shape[1]
-    confusion_matrix = np.zeros((num_outputs, num_outputs), dtype=np.int32)
-    predictions = np.argmax(model_results,axis=1)
-    assert len(predictions)==truth.shape[0]
-
-    for actual_class in range(num_outputs):
-        idx_examples_this_class = truth[:,actual_class]==1
-        prediction_for_this_class = predictions[idx_examples_this_class]
-        for predicted_class in range(num_outputs):
-            count = np.sum(prediction_for_this_class==predicted_class)
-            confusion_matrix[actual_class, predicted_class] = count
-    assert np.sum(confusion_matrix)==len(truth)
-    assert np.sum(confusion_matrix)==np.sum(truth)
-    return confusion_matrix
 
 def train(args):
 
@@ -514,13 +495,27 @@ def plot_training(modelname,model,history):
 
     plot_model(model, to_file="fitted_models/"+modelname + '_keras.png')
 
-def evaluate_model():
+def predict_batch():
     """Makes predictions on input images and calls the conf_matrix
     ARGS:
 
 
     Returns:
     """
+    mapping = {0: '1905', 1: '1906', 2: '1908', 3: '1909', 4: '1910', 5: '1911', 6: '1912', 7: '1913', 8: '1914', 9: '1915',
+               10: '1916', 11: '1919', 12: '1922', 13: '1923', 14: '1924', 15: '1925', 16: '1926', 17: '1927', 18: '1928',
+               19: '1929', 20: '1930', 21: '1931', 22: '1932', 23: '1933', 24: '1934', 25: '1935', 26: '1936', 27: '1937',
+               28: '1938', 29: '1939', 30: '1940', 31: '1941', 32: '1942', 33: '1943', 34: '1944', 35: '1945', 36: '1946',
+               37: '1947', 38: '1948', 39: '1949', 40: '1950', 41: '1951', 42: '1952', 43: '1953', 44: '1954', 45: '1955',
+               46: '1956', 47: '1957', 48: '1958', 49: '1959', 50: '1960', 51: '1961', 52: '1962', 53: '1963', 54: '1964',
+               55: '1965', 56: '1966', 57: '1967', 58: '1968', 59: '1969', 60: '1970', 61: '1971', 62: '1972', 63: '1973',
+               64: '1974', 65: '1975', 66: '1976', 67: '1977', 68: '1978', 69: '1979', 70: '1980', 71: '1981', 72: '1982',
+               73: '1983', 74: '1984', 75: '1985', 76: '1986', 77: '1987', 78: '1988', 79: '1989', 80: '1990', 81: '1991',
+               82: '1992', 83: '1993', 84: '1994', 85: '1995', 86: '1996', 87: '1997', 88: '1998', 89: '1999', 90: '2000',
+               91: '2001', 92: '2002', 93: '2003', 94: '2004', 95: '2005', 96: '2006', 97: '2007', 98: '2008', 99: '2009',
+               100: '2010', 101: '2011', 102: '2012', 103: '2013'}
+
+
 
     target_size = (299, 299) #fixed size for InceptionV3 architecture 
     modelname = "inceptionv3_categorical_crossentropy_rmsprop_lr0.0001_epochs2_regnone_tl.model"
@@ -529,26 +524,87 @@ def evaluate_model():
     keras.metrics.max_L1_distance= max_L1_distance
     keras.metrics.mean_L1_distance= mean_L1_distance
     model = load_model("./fitted_models/" + modelname)
-    
 
     # this is the address on microdeep
-    # glob_path = '/home/farzan15/cs395t-f17/data/yearbook/A/A/*'
-    # filepaths = glob.glob(glob_path)
+    glob_path = '/home/farzan15/cs395t-f17/data/yearbook/A/A/*'
+    filepaths = glob.glob(glob_path)
 
-
+    # this part is one way to make predictions on data
     main_path = '/home/farzan15/cs395t-f17/data/yearbook/train/'
     # read training data
     lines_train = [line.rstrip('\n') for line in open('../data/yearbook/yearbook_train.txt')]
-    n_exm = 1000  # specify the number of examples for which you want to make predictions
-    output = np.zeros(n_exm, 2)
-    for lines in lines_train[:n_exm]:
+    n_exm = 1000
+    model_output = np.zeros(n_exm, dtype='int32')
+    gold_labels = np.zeros(n_exm, dtype='int32')
+    for i, lines in enumerate(lines_train[:n_exm]):
         part_path, label = lines.split("\t")
         full_path = main_path + part_path 
         # img2 = imread(full_path)
         img = Image.open(full_path)  # we need to read the image using PIL.Image
-        output.append([np.argmax(predict(model, img, target_size)), label] )
-    pdb.set_trace()
-    return output
+        model_output[i] = mapping[np.argmax(predict(model, img, target_size))]
+        gold_labels[i] = label
+
+
+    return model_output, gold_labels
+
+def conf_matrix():
+    model_output, gold_labels = predict_batch()
+    return confusion_matrix(gold_labels, model_output)
+
+
+def plot_confusion_matrix(cm,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+
+    mapping = {0: '1905', 1: '1906', 2: '1908', 3: '1909', 4: '1910', 5: '1911', 6: '1912', 7: '1913', 8: '1914', 9: '1915',
+               10: '1916', 11: '1919', 12: '1922', 13: '1923', 14: '1924', 15: '1925', 16: '1926', 17: '1927', 18: '1928',
+               19: '1929', 20: '1930', 21: '1931', 22: '1932', 23: '1933', 24: '1934', 25: '1935', 26: '1936', 27: '1937',
+               28: '1938', 29: '1939', 30: '1940', 31: '1941', 32: '1942', 33: '1943', 34: '1944', 35: '1945', 36: '1946',
+               37: '1947', 38: '1948', 39: '1949', 40: '1950', 41: '1951', 42: '1952', 43: '1953', 44: '1954', 45: '1955',
+               46: '1956', 47: '1957', 48: '1958', 49: '1959', 50: '1960', 51: '1961', 52: '1962', 53: '1963', 54: '1964',
+               55: '1965', 56: '1966', 57: '1967', 58: '1968', 59: '1969', 60: '1970', 61: '1971', 62: '1972', 63: '1973',
+               64: '1974', 65: '1975', 66: '1976', 67: '1977', 68: '1978', 69: '1979', 70: '1980', 71: '1981', 72: '1982',
+               73: '1983', 74: '1984', 75: '1985', 76: '1986', 77: '1987', 78: '1988', 79: '1989', 80: '1990', 81: '1991',
+               82: '1992', 83: '1993', 84: '1994', 85: '1995', 86: '1996', 87: '1997', 88: '1998', 89: '1999', 90: '2000',
+               91: '2001', 92: '2002', 93: '2003', 94: '2004', 95: '2005', 96: '2006', 97: '2007', 98: '2008', 99: '2009',
+               100: '2010', 101: '2011', 102: '2012', 103: '2013'}
+
+    classes = mapping.values()
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    print(cm)
+    plt.figure()
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    fmt = '.2f' if normalize else 'd'
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, format(cm[i, j], fmt),
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.savefig("./conf_matrix")
+
+
+
 
 
 
@@ -582,8 +638,10 @@ if __name__ == "__main__":
 
 
     # train(args)
-    evaluate_model()
-
+    c_mat = conf_matrix()
+    plot_confusion_matrix(c_mat,normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues)
     # Using TensorFlow backend.
     # Found 22840 images belonging to 2 classes.
     # Found 5009 images belonging to 2 classes.nn
