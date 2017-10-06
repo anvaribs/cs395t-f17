@@ -481,6 +481,9 @@ def train(args):
     model.save("fitted_models/" + output_name)
 
     #code.interact(local=locals())
+     #works for getting train_preds, but takes forever!
+    #train_preds = model.predict_generator(generator=train_generator, steps=128, verbose=1)
+    #np.where( train_preds[0] == 1)[0][0]
 
     print("Save transfer learning plots ...")
     try:
