@@ -2,6 +2,7 @@ import os
 import sys
 import glob
 import argparse
+import numpy as np
 import matplotlib.pyplot as plt
 
 from keras import __version__
@@ -39,7 +40,7 @@ BAT_SIZE = 128
 LEARNING_RATE = 1e-4
 # FC_SIZE = 1024
 # NB_LAYERS_TO_FREEZE = 172
-LAMBDA = 1.0
+LAMBDA = K.cast_to_floatx(1.0)
 
 
 def mean_L1_distance(y_true, y_pred):
@@ -58,29 +59,53 @@ def std_L1_distance(y_true, y_pred):
 
 
 
-def categorical_crossentropy_mean_squared_error(y_true, y_pred):
-    year_pred = K.cast(K.argmax(y_pred,axis = -1), 'float32')
-    year_true = K.cast(K.argmax(y_true,axis = -1), 'float32')
-    return  K.categorical_crossentropy(y_true, y_pred) + LAMBDA * K.square(year_pred - year_true)
+def categorical_crossentropy_mean_squared_error_1(y_true, y_pred):
+    year_pred = K.cast(K.argmax(y_pred,axis = -1), K.floatx())
+    year_true = K.cast(K.argmax(y_true,axis = -1), K.floatx())
+
+    return  (K.categorical_crossentropy(y_true, y_pred) + K.cast_to_floatx(1.0) * K.square(year_pred - year_true))
+
+def categorical_crossentropy_mean_squared_error_01(y_true, y_pred):
+    year_pred = K.cast(K.argmax(y_pred,axis = -1), K.floatx())
+    year_true = K.cast(K.argmax(y_true,axis = -1), K.floatx())
+
+    return  (K.categorical_crossentropy(y_true, y_pred) + K.cast_to_floatx(0.1) * K.square(year_pred - year_true))
+
+def categorical_crossentropy_mean_squared_error_001(y_true, y_pred):
+    year_pred = K.cast(K.argmax(y_pred,axis = -1), K.floatx())
+    year_true = K.cast(K.argmax(y_true,axis = -1), K.floatx())
+
+    return  (K.categorical_crossentropy(y_true, y_pred) + K.cast_to_floatx(0.01) * K.square(year_pred - year_true))
 
 
 
 def pure_mean_squared_error(y_true, y_pred):
     year_pred = K.cast(K.argmax(y_pred,axis = -1), 'float32')
     year_true = K.cast(K.argmax(y_true,axis = -1), 'float32')
-    return  LAMBDA * K.square(year_pred - year_true)
+    return (LAMBDA * K.square(year_pred - year_true))
 
 
 
-def categorical_crossentropy_mean_absoulute_error(y_true, y_pred):
+def categorical_crossentropy_mean_absoulute_error_1(y_true, y_pred):
     year_pred = K.cast(K.argmax(y_pred,axis = -1), 'float32')
     year_true = K.cast(K.argmax(y_true,axis = -1), 'float32')
-    return  K.categorical_crossentropy(y_true, y_pred) + LAMBDA * K.abs(year_pred - year_true)
+    return  (K.categorical_crossentropy(y_true, y_pred) + K.cast_to_floatx(1.0) * K.abs(year_pred - year_true))
+
+def categorical_crossentropy_mean_absoulute_error_01(y_true, y_pred):
+    year_pred = K.cast(K.argmax(y_pred,axis = -1), 'float32')
+    year_true = K.cast(K.argmax(y_true,axis = -1), 'float32')
+    return  (K.categorical_crossentropy(y_true, y_pred) + K.cast_to_floatx(0.1) * K.abs(year_pred - year_true))
+
+def categorical_crossentropy_mean_absoulute_error_001(y_true, y_pred):
+    year_pred = K.cast(K.argmax(y_pred,axis = -1), 'float32')
+    year_true = K.cast(K.argmax(y_true,axis = -1), 'float32')
+    return  (K.categorical_crossentropy(y_true, y_pred) + K.cast_to_floatx(0.01) * K.abs(year_pred - year_true))
 
 
 
 
 def test_loss():
+    np.random.seed(1)
     y_a = K.variable(np.random.random((6, 7)))
     y_b = K.variable(np.random.random((6, 7)))
 
@@ -88,14 +113,23 @@ def test_loss():
     print(K.eval(y_b).shape)
 
     print(K.eval(y_a))
-
-    print(K.eval(K.abs(K.argmax(y_a,axis = -1))).shape)
-    print (K.eval(K.abs(K.argmax(y_a,axis = -1))))
-
+    # print(K.eval(K.abs(K.argmax(y_a,axis = -1))).shape)
+    # print (K.eval(K.abs(K.argmax(y_a,axis = -1))))
+    output1 = losses.categorical_crossentropy(y_a, y_b)
+    output2 = pure_mean_squared_error(y_a, y_b)
     output = categorical_crossentropy_mean_squared_error(y_a, y_b)
+    # output_mse = pure_mean_squared_error(y_a, y_b)
     print('mean_L1:')
     print(K.eval(output).shape)
-    print(K.eval(output))
+    print('cross:', K.eval(output1))
+    print('mse: ', K.eval(output2))
+
+    print('total: ', K.eval(output))
+    # print('total_mse:',K.eval(output_mse))
+    # print('cross_entropy:', K.eval(output1))
+    # print('mse: ', K.eval(output2))
+
+
     assert K.eval(output).shape == (6,)
 
 
@@ -594,7 +628,7 @@ if __name__ == "__main__":
     a.add_argument("--nb_epoch", default=NB_EPOCHS)
     a.add_argument("--batch_size", default=BAT_SIZE)
     a.add_argument("--optimizer", default='rmsprop')
-    a.add_argument("--loss", default='categorical_crossentropy')
+    a.add_argument("--loss", default= 'categorical_crossentropy')
     a.add_argument("--learning_rate", default=LEARNING_RATE)
     a.add_argument("--regularizer", default='none')
     a.add_argument("--reg_rate", default=0)
@@ -606,10 +640,10 @@ if __name__ == "__main__":
         print("directory to data does not exist")
         sys.exit(1)
 
-    model = train(args)
-    evaluate(model, args)  # this is mainly used for confusion matr
+    # model = train(args)
+    # evaluate(model, args)  # this is mainly used for confusion matr
     # Using TensorFlow backend.
     # Found 22840 images belonging to 2 classes.
     # Found 5009 images belonging to 2 classes.
 
-    # test_loss()
+    test_loss()
