@@ -21,7 +21,7 @@ from keras import losses
 import keras.losses
 
 import keras.backend as K
-from keras.callbacks import Callback, CSVLogger, ModelCheckpoint
+from keras.callbacks import Callback, CSVLogger, ModelCheckpoint, EarlyStopping
 from predict import predict
 
 import pandas as pd
@@ -466,18 +466,21 @@ def train(args):
     logger_output_tl = output_base+"_tl.log"
     csv_logger_tl = CSVLogger("logs/"+logger_output_tl)
     weights_tl = output_base+"_tl.hdf5"
-    checkpointer_tl = ModelCheckpoint(filepath='fitted_models/'+weights_tl, verbose=1, monitor='mean_L1_distance', save_best_only=True)
+    checkpointer_tl = ModelCheckpoint(filepath='fitted_models/'+weights_tl, verbose=1, monitor='val_mean_L1_distance', save_best_only=True)
+    early_stopping_tl = EarlyStopping(monitor=‘val_mean_L1_distance’, patience=4)
     history_tl = model.fit_generator(
         train_generator,
         epochs=nb_epoch,
         steps_per_epoch=nb_train_samples / batch_size,
         validation_data=validation_generator,
         validation_steps=nb_val_samples / batch_size,
-        callbacks=[csv_logger_tl,checkpointer_tl],
+        callbacks=[csv_logger_tl,checkpointer_tl, early_stopping_tl],
         class_weight='auto')  # Amin: what is this class_weight?
 
     output_name = output_base+"_tl.model"
     model.save("fitted_models/" + output_name)
+
+    #code.interact(local=locals())
 
     print("Save transfer learning plots ...")
     try:
@@ -495,14 +498,15 @@ def train(args):
     logger_output_ft = output_base+"_ft.log"
     csv_logger_ft = CSVLogger("logs/"+logger_output_ft)
     weights_ft = output_base+"_ft.hdf5"
-    checkpointer_ft = ModelCheckpoint(filepath='fitted_models/'+weights_ft, verbose=1, monitor='mean_L1_distance', save_best_only=True)
+    checkpointer_ft = ModelCheckpoint(filepath='fitted_models/'+weights_ft, verbose=1, monitor='val_mean_L1_distance', save_best_only=True)
+    early_stopping_ft = EarlyStopping(monitor=‘val_mean_L1_distance’, patience=6)
     history_ft = model.fit_generator(
         train_generator,
         epochs=nb_epoch,
         steps_per_epoch=nb_train_samples / batch_size,
         validation_data=validation_generator,
         validation_steps=nb_val_samples / batch_size,
-        callbacks=[csv_logger_ft,checkpointer_ft],
+        callbacks=[csv_logger_ft,checkpointer_ft,early_stopping_ft],
         class_weight='auto')
 
     output_name = output_base+"_ft.model"
@@ -669,7 +673,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     model = train(args)
-    evaluate(model, args)  # this is mainly used for confusion matr
+    #evaluate(model, args)  # this is mainly used for confusion matr
     # Using TensorFlow backend.
     # Found 22840 images belonging to 2 classes.
     # Found 5009 images belonging to 2 classes.
