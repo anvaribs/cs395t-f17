@@ -270,6 +270,9 @@ def setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, optimizer_i
         optimizer_ft = optimizers.Adagrad(lr = learning_rate/10)
       
     # We should use lower learning rate when fine-tuning. learning_rate /10 is a good start.
+    # ing should be done with a very slow learning rate, and typically with the SGD optimizer rather than an
+    # adaptative learning rate optimizer such as RMSProp. This is to make sure that the magnitude of the updates stays
+    # very small, so as not to wreck the previously learned features.
     model.compile(optimizer=optimizers.SGD(lr = learning_rate/10, momentum=9.0), loss=loss_in,
                   metrics=['acc', 'top_k_categorical_accuracy', mean_L1_distance, min_L1_distance, max_L1_distance])
 
