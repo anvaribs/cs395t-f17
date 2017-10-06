@@ -46,18 +46,26 @@ def evaluate_model():
   """
 
   target_size = (299, 299) #fixed size for InceptionV3 architecture 
-  # modelname = 
-  model = load_model("./fitted_models" + modelname)
+  modelname = "inceptionv3_categorical_crossentropy_rmsprop_lr0.0001_epochs2_regnone_tl.model"
+  import pdb; pdb.set_trace()
+  model = load_model("./fitted_models/" + modelname)
   output = []
 
-  mylist = dir(hdf5_getters)
   # this is the address on microdeep
-  glob_path = '/home/farzan15/cs395t-f17/data/yearbook/A/A/*'
-  filepaths = glob.glob(glob_path)
-  for filepath in filepaths:
-    img = imread(filepath)
+  # glob_path = '/home/farzan15/cs395t-f17/data/yearbook/A/A/*'
+  # filepaths = glob.glob(glob_path)
+
+
+  main_path = '/home/farzan15/cs395t-f17/data/yearbook/train/'
+  # read training data
+  lines_train = [line.rstrip('\n') for line in open('../data/yearbook/yearbook_train.txt')]
+  for lines in lines_train:
+    part_path, label = lines.split("\t")
+    full_path = main_path + part_path 
+    img = imread(full_path)
     import pdb; pdb.set_trace()
-    output.append(predict(model, img, target_size))
+
+    output.append(predict(model, img, target_size), label)
   return output
 
 
@@ -95,21 +103,22 @@ if __name__=="__main__":
   a.add_argument("--model")
   args = a.parse_args()
 
-  if args.image is None and args.image_url is None:
-    a.print_help()
-    sys.exit(1)
+  # if args.image is None and args.image_url is None:
+  #   a.print_help()
+  #   sys.exit(1)
 
-  model = load_model(args.model)
-  print(model.summary())
-  if args.image is not None:
-    img = Image.open(args.image)
-    preds = predict(model, img, target_size)
-    print(preds)
-    #plot_preds(img, preds)
+  # model = load_model(args.model)
+  # print(model.summary())
+  # if args.image is not None:
+  #   img = Image.open(args.image)
+  #   preds = predict(model, img, target_size)
+  #   print(preds)
+  #   #plot_preds(img, preds)
 
-  if args.image_url is not None:
-    response = requests.get(args.image_url)
-    img = Image.open(BytesIO(response.content))
-    preds = predict(model, img, target_size)
-    #plot_preds(img, preds)
+  # if args.image_url is not None:
+  #   response = requests.get(args.image_url)
+  #   img = Image.open(BytesIO(response.content))
+  #   preds = predict(model, img, target_size)
+  #   #plot_preds(img, preds)
 
+  evaluate_model()  # this is mainly used for confusion matr

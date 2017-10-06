@@ -32,7 +32,7 @@ import datetime
 #default for inceptionv3
 ARCHITECTURE = "inceptionv3"
 # IM_WIDTH, IM_HEIGHT = 299, 299
-NB_EPOCHS = 10
+NB_EPOCHS = 2
 BAT_SIZE = 128   
 LEARNING_RATE = 1e-4
 # FC_SIZE = 1024
@@ -510,7 +510,36 @@ def plot_training(modelname,model,history):
 
     plot_model(model, to_file="fitted_models/"+modelname + '_keras.png')
 
+def evaluate_model():
+    """Makes predictions on input images and calls the conf_matrix
+    ARGS:
 
+
+    Returns:
+    """
+
+    target_size = (299, 299) #fixed size for InceptionV3 architecture 
+    modelname = "inceptionv3_categorical_crossentropy_rmsprop_lr0.0001_epochs2_regnone_tl.model"
+    import pdb; pdb.set_trace()
+    model = load_model("./fitted_models/" + modelname)
+    output = []
+
+    # this is the address on microdeep
+    # glob_path = '/home/farzan15/cs395t-f17/data/yearbook/A/A/*'
+    # filepaths = glob.glob(glob_path)
+
+
+    main_path = '/home/farzan15/cs395t-f17/data/yearbook/train/'
+    # read training data
+    lines_train = [line.rstrip('\n') for line in open('../data/yearbook/yearbook_train.txt')]
+    for lines in lines_train:
+        part_path, label = lines.split("\t")
+        full_path = main_path + part_path 
+        img = imread(full_path)
+        import pdb; pdb.set_trace()
+
+        output.append(predict(model, img, target_size), label)
+    return output
 
 
 
@@ -518,6 +547,7 @@ if __name__ == "__main__":
     # SAMPLE CALLs
     # python fine-tune.py --data_dir="../data/yearbook" --model_name="inceptionv3"         #use training set from data/yearbook/train, new images in data/yearbook/train_inception3
     # python fine-tune.py --data_dir="../data/yearbook" --input_dir="train_sub" --valid_dir="valid_sub" --train_file="yearbook_train_small.txt" --valid_file="yearbook_valid_small.txt" --model_name="inceptionv3"
+    
     a = argparse.ArgumentParser()
     a.add_argument("--data_dir", default='../data/yearbook')
     a.add_argument("--input_dir", default="train")
@@ -536,12 +566,14 @@ if __name__ == "__main__":
     a.add_argument("--plot", action="store_true")
 
     args = a.parse_args()
+
     if (not os.path.exists(args.data_dir)):
         print("directory to data does not exist")
         sys.exit(1)
 
-    evaluate_model()  # this is mainly used for confusion matr
-    
+
+    # train(args)
+    evaluate_model()
 
     # Using TensorFlow backend.
     # Found 22840 images belonging to 2 classes.
