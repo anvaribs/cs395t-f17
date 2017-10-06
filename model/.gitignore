@@ -1,3 +1,5 @@
 fitted_models/*
+logs/*
 
 !fitted_models/.gitkeep
+!logs/.gitkeep

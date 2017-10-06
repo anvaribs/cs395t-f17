@@ -3,6 +3,8 @@ import sys
 import glob
 import argparse
 import numpy as np
+import matplotlib     #i was getting the following error in plot_training()  https://github.com/matplotlib/matplotlib/issues/3466
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 
 from keras import __version__
@@ -21,16 +23,13 @@ import keras.backend as K
 from keras.callbacks import Callback, CSVLogger, ModelCheckpoint
 from predict import predict
 
-
-
-
 import pandas as pd
 from shutil import copyfile
 
-from keras.utils import plot_model
+#from keras.utils import plot_model
 import code  # https://www.digitalocean.com/community/tutorials/how-to-debug-python-with-an-interactive-console
 import datetime
-
+import traceback
 
 #default for inceptionv3
 ARCHITECTURE = "inceptionv3"
@@ -40,7 +39,7 @@ BAT_SIZE = 128
 LEARNING_RATE = 1e-4
 # FC_SIZE = 1024
 # NB_LAYERS_TO_FREEZE = 172
-LAMBDA = K.cast_to_floatx(1.0)
+# LAMBDA = K.cast_to_floatx(1.0)
 
 
 def mean_L1_distance(y_true, y_pred):
@@ -150,7 +149,7 @@ def get_nb_files(directory):
     return cnt
 
 
-def setup_to_transfer_learn(model, base_model, optimizer_in, loss_in, learning_rate  ):
+def setup_to_transfer_learn(model, base_model, optimizer_in, loss_in, learning_rate, decay  ):
     """Freeze all layers and compile the model"""  # Transfer learning: freeze all but the penultimate layer and re-train the last Dense layer
     print('Number of trainable weight tensors '
       'before freezing the conv base:', len(model.trainable_weights))
@@ -162,9 +161,9 @@ def setup_to_transfer_learn(model, base_model, optimizer_in, loss_in, learning_r
       'after freezing the conv base:', len(model.trainable_weights))
     
     if optimizer_in == 'rmsprop':
-        optimizer_tl = optimizers.RMSprop(lr = learning_rate)
+        optimizer_tl = optimizers.RMSprop(lr = learning_rate, decay=decay)
     elif optimizer_in == 'adam':
-        optimizer_tl = optimizers.Adam(lr = learning_rate)
+        optimizer_tl = optimizers.Adam(lr = learning_rate, decay = decay)
     elif optimizer_in == 'sgd':
         optimizer_tl = optimizers.SGD(lr = learning_rate, momentum=9.0, nesterov=True)
     elif optimizer_in == 'adagrad':
@@ -220,7 +219,7 @@ def add_new_last_layer(base_model, nb_classes, FC_SIZE, regularizer, reg_rate):
     return model
 
 
-def setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, optimizer_in, loss_in, learning_rate):
+def setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, optimizer_in, loss_in, learning_rate, decay):
     """Freeze the bottom NB_IV3_LAYERS and retrain the remaining top layers.  #Fine-tuning: un-freeze the lower convolutional layers and retrain more layers
 
     note: NB_IV3_LAYERS corresponds to the top 2 inception blocks in the inceptionv3 arch
@@ -256,9 +255,9 @@ def setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, optimizer_i
       'during the fine-tuning step:', len(model.trainable_weights))
 
     if optimizer_in == 'rmsprop':
-        optimizer_ft = optimizers.RMSprop(lr = learning_rate/10)
+        optimizer_ft = optimizers.RMSprop(lr = learning_rate/10, decay=decay)
     elif optimizer_in == 'adam':
-        optimizer_ft = optimizers.Adam(lr = learning_rate/10)
+        optimizer_ft = optimizers.Adam(lr = learning_rate/10, decay=decay)
     elif optimizer_in == 'sgd':
         optimizer_ft = optimizers.SGD(lr = learning_rate/10, momentum=9.0, nesterov=True)
     elif optimizer_in == 'adagrad':
@@ -311,6 +310,9 @@ def train(args):
     nb_epoch = int(args.nb_epoch)
     batch_size = int(args.batch_size)
 
+    LAMBDA = int(args.lambda_val)
+    decay = int(args.decay)
+
     # for now need to force classes of validation to be same of train somehow
     response_classes = ['1905', '1906', '1908', '1909', '1910', '1911', '1912', '1913', '1914', '1915', '1916', '1919',
                         '1922', '1923', '1924', '1925', '1926', '1927', '1928', '1929', '1930', '1931', '1932', '1933',
@@ -330,6 +332,8 @@ def train(args):
     print("nb_val_samples: ", nb_val_samples)
     print("nb_epoch: ", nb_epoch)
     print("batch_size: ", batch_size)
+    print("decay: ", batch_size)
+    print("LAMBDA: ", batch_size)
 
     # SET DEFAULTS BASED ON ARTCHITECTURE
     ARCHITECTURE = args.model_name
@@ -446,49 +450,64 @@ def train(args):
         classes=response_classes
     )
 
-
-   
-
     model = add_new_last_layer(base_model, nb_classes, FC_SIZE, args.regularizer, args.reg_rate)
 
     # transfer learning
-    setup_to_transfer_learn(model, base_model, args.optimizer, args.loss, float(args.learning_rate))
+    setup_to_transfer_learn(model, base_model, args.optimizer, args.loss, float(args.learning_rate),decay)
 
+    datenow = datetime.datetime.today().strftime('%Y-%m-%d_%H:%m')
+    output_base = "m_"+datenow+"_"+args.model_name + "_" + args.loss + "_" + args.optimizer + "_lr" + str(args.learning_rate) + "_epochs" + str(nb_epoch) + "_reg"+args.regularizer+"_decay"+str(decay)
+    logger_output_tl = output_base+"_tl.log"
+    csv_logger_tl = CSVLogger("logs/"+logger_output_tl)
+    weights_tl = output_base+"_tl.hdf5"
+    checkpointer_tl = ModelCheckpoint(filepath='fitted_models/'+weights_tl, verbose=1, monitor='mean_L1_distance', save_best_only=True)
     history_tl = model.fit_generator(
         train_generator,
         epochs=nb_epoch,
         steps_per_epoch=nb_train_samples / batch_size,
         validation_data=validation_generator,
         validation_steps=nb_val_samples / batch_size,
+        callbacks=[csv_logger_tl,checkpointer_tl],
         class_weight='auto')  # Amin: what is this class_weight?
 
-    output_name = args.model_name + "_" + args.loss + "_" + args.optimizer + "_lr" + str(args.learning_rate) + "_epochs" + str(nb_epoch) + "_reg"+args.regularizer+"_tl.model"
+    output_name = output_base+"_tl.model"
     model.save("fitted_models/" + output_name)
 
     print("Save transfer learning plots ...")
-    plot_training(output_name, model, history_tl)
+    try:
+        plot_training(output_name, model, history_tl)
+    except Exception as e:
+        print(traceback.format_exc())
 
     # fine-tuning
-    setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, args.optimizer, args.loss, float(args.learning_rate))
+    setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, args.optimizer, args.loss, float(args.learning_rate), decay)
 
     # Doing transfer learning and then fine-tuning, in that order, will ensure a more stable and consistent training.
     # This is because the large gradient updates triggered by randomly initialized weights could wreck the learned weights in the convolutional base if not frozen.
     # Once the last layer has stabilized (transfer learning), then we move onto retraining more layers (fine-tuning).
 
+    logger_output_ft = output_base+"_ft.log"
+    csv_logger_ft = CSVLogger("logs/"+logger_output_ft)
+    weights_ft = output_base+"_ft.hdf5"
+    checkpointer_ft = ModelCheckpoint(filepath='fitted_models/'+weights_ft, verbose=1, monitor='mean_L1_distance', save_best_only=True)
     history_ft = model.fit_generator(
         train_generator,
         epochs=nb_epoch,
         steps_per_epoch=nb_train_samples / batch_size,
         validation_data=validation_generator,
         validation_steps=nb_val_samples / batch_size,
+        callbacks=[csv_logger_ft,checkpointer_ft],
         class_weight='auto')
 
-    output_name = args.model_name + "_" + args.loss + "_" + args.optimizer + "_lr" + str(args.learning_rate) + "_epochs" + str(nb_epoch) + "_reg"+args.regularizer+"_ft.model"
+    output_name = output_base+"_ft.model"
     print("Save Model "+output_name)
     model.save("fitted_models/"+output_name)
 
     print("Save fine-tuning plots ...")
-    plot_training(output_name, model, history_ft)
+    try:
+        plot_training(output_name, model, history_ft)
+    except Exception as e:
+        print(traceback.format_exc())
 
     acc = history_ft.history['acc']
     val_acc = history_ft.history['val_acc']
@@ -562,12 +581,12 @@ def plot_training(modelname,model,history):
     mean_L1 = history.history['mean_L1_distance']
     val_mean_L1 = history.history['val_mean_L1_distance']
 
-
     epochs = range(len(acc))
 
+    
     plt.plot(epochs, acc, 'r.', label = 'Training Accuracy')
     plt.plot(epochs, val_acc, 'r', label = 'Validation Accuracy')
-    plt.title('Training and validation accuracy')
+    plt.title('Train/val accuracy for '+modelname)
     plt.legend()
 
 
@@ -578,7 +597,7 @@ def plot_training(modelname,model,history):
 
     plt.plot(epochs, loss, 'r.', label = 'Traning Loss')
     plt.plot(epochs, val_loss, 'r-', label = 'Validation Loss')
-    plt.title('Training and validation loss')
+    plt.title('Train/val loss for '+modelname)
     plt.legend()
 
     plt.savefig("fitted_models/"+modelname+"_train_val_loss.png")
@@ -589,13 +608,14 @@ def plot_training(modelname,model,history):
 
     plt.plot(epochs, mean_L1, 'r.', label = 'Traning mean L1 Score')
     plt.plot(epochs, val_mean_L1, 'r-', label = 'Validation mean L1 Score')
-    plt.title('Training and validation mean L1 Scores')
+    plt.title('Train/val mean L1 Scores for '+modelname)
     plt.legend()
 
     plt.savefig("fitted_models/"+modelname+"_train_val_mean_L1.png")
     plt.close()
 
-    plot_model(model, to_file="fitted_models/"+modelname + '_keras.png')
+    #this causes conflicts with python 3.6 (it was built on 2.7)
+    #plot_model(model, to_file="fitted_models/"+modelname + '_keras.png')
 
 def evaluate(model):
 
@@ -632,6 +652,8 @@ if __name__ == "__main__":
     a.add_argument("--learning_rate", default=LEARNING_RATE)
     a.add_argument("--regularizer", default='none')
     a.add_argument("--reg_rate", default=0)
+    a.add_argument("--decay", default=0)
+    a.add_argument("--lambda_val", default=1)
     a.add_argument("--output_model_file", default="inceptionv3-ft.model")
     a.add_argument("--plot", action="store_true")
 
@@ -640,10 +662,12 @@ if __name__ == "__main__":
         print("directory to data does not exist")
         sys.exit(1)
 
-    # model = train(args)
-    # evaluate(model, args)  # this is mainly used for confusion matr
+    model = train(args)
+    evaluate(model, args)  # this is mainly used for confusion matr
     # Using TensorFlow backend.
     # Found 22840 images belonging to 2 classes.
     # Found 5009 images belonging to 2 classes.
 
-    test_loss()
+
+    # test_loss()
+
