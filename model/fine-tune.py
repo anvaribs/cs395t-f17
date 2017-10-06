@@ -467,7 +467,7 @@ def train(args):
     csv_logger_tl = CSVLogger("logs/"+logger_output_tl)
     weights_tl = output_base+"_tl.hdf5"
     checkpointer_tl = ModelCheckpoint(filepath='fitted_models/'+weights_tl, verbose=1, monitor='val_mean_L1_distance', save_best_only=True)
-    early_stopping_tl = EarlyStopping(monitor=‘val_mean_L1_distance’, patience=4)
+    early_stopping_tl = EarlyStopping(monitor='val_mean_L1_distance', patience=4)
     history_tl = model.fit_generator(
         train_generator,
         epochs=nb_epoch,
@@ -499,7 +499,7 @@ def train(args):
     csv_logger_ft = CSVLogger("logs/"+logger_output_ft)
     weights_ft = output_base+"_ft.hdf5"
     checkpointer_ft = ModelCheckpoint(filepath='fitted_models/'+weights_ft, verbose=1, monitor='val_mean_L1_distance', save_best_only=True)
-    early_stopping_ft = EarlyStopping(monitor=‘val_mean_L1_distance’, patience=6)
+    early_stopping_ft = EarlyStopping(monitor='val_mean_L1_distance', patience=6)
     history_ft = model.fit_generator(
         train_generator,
         epochs=nb_epoch,
