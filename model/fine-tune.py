@@ -2,6 +2,8 @@ import os
 import sys
 import glob
 import argparse
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from skimage.io import imread
 from keras import __version__
@@ -32,6 +34,7 @@ import code  # https://www.digitalocean.com/community/tutorials/how-to-debug-pyt
 import datetime
 import pdb
 from sklearn.metrics import confusion_matrix
+import itertools
 
 #default for inceptionv3
 ARCHITECTURE = "inceptionv3"
@@ -518,8 +521,8 @@ def predict_batch():
 
 
     target_size = (299, 299) #fixed size for InceptionV3 architecture 
-    modelname = "inceptionv3_categorical_crossentropy_rmsprop_lr0.0001_epochs2_regnone_tl.model"
-    
+    # modelname = "inceptionv3_categorical_crossentropy_rmsprop_lr0.0001_epochs2_regnone_tl.model"
+    modelname = "m_2017-10-06_02:10_inceptionv3_categorical_crossentropy_adam_lr0.001_epochs50_regnone_decay0.0_ft.model"
     keras.metrics.min_L1_distance= min_L1_distance
     keras.metrics.max_L1_distance= max_L1_distance
     keras.metrics.mean_L1_distance= mean_L1_distance
@@ -547,20 +550,17 @@ def predict_batch():
 
     return model_output, gold_labels
 
-def conf_matrix():
-    model_output, gold_labels = predict_batch()
-    return confusion_matrix(gold_labels, model_output)
+
 
 
 def plot_confusion_matrix(cm,
                           normalize=False,
-                          title='Confusion matrix',
-                          cmap=plt.cm.Blues):
+                          title='Confusion matrix'):
     """
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
     """
-
+    cmap=plt.cm.Blues
     mapping = {0: '1905', 1: '1906', 2: '1908', 3: '1909', 4: '1910', 5: '1911', 6: '1912', 7: '1913', 8: '1914', 9: '1915',
                10: '1916', 11: '1919', 12: '1922', 13: '1923', 14: '1924', 15: '1925', 16: '1926', 17: '1927', 18: '1928',
                19: '1929', 20: '1930', 21: '1931', 22: '1932', 23: '1933', 24: '1934', 25: '1935', 26: '1936', 27: '1937',
@@ -584,7 +584,7 @@ def plot_confusion_matrix(cm,
 
     print(cm)
     plt.figure()
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.imshow(cm, interpolation='nearest')
     plt.title(title)
     plt.colorbar()
     tick_marks = np.arange(len(classes))
@@ -601,7 +601,7 @@ def plot_confusion_matrix(cm,
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-    plt.savefig("./conf_matrix")
+    plt.savefig("./plots/conf_matrix.pdf")
 
 
 
@@ -638,10 +638,11 @@ if __name__ == "__main__":
 
 
     # train(args)
-    c_mat = conf_matrix()
+
+    model_output, gold_labels = predict_batch()
+    c_mat = confusion_matrix(gold_labels, model_output)
     plot_confusion_matrix(c_mat,normalize=False,
-                          title='Confusion matrix',
-                          cmap=plt.cm.Blues)
+                          title='Confusion matrix')
     # Using TensorFlow backend.
     # Found 22840 images belonging to 2 classes.
     # Found 5009 images belonging to 2 classes.nn
