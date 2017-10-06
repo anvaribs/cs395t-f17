@@ -481,7 +481,7 @@ def train(args):
     weights_tl = output_base+'weights.{epoch:02d}-{val_mean_L1_distance:.2f}'+"_tl.hdf5"
     checkpointer_tl = ModelCheckpoint(filepath='fitted_models/checkpoints/'+weights_tl, verbose=1, monitor='val_mean_L1_distance', save_best_only=True, mode = 'min')
     early_stopping_tl = EarlyStopping(monitor='val_mean_L1_distance', patience=4, mode = 'min', verbose=1)
-    tensorboard = TensorBoard(log_dir='./fitted_models/logs', histogram_freq=10, write_images=True)
+    tensorboard = TensorBoard(log_dir='./fitted_models/logs', histogram_freq=0, write_images=True)
     reducelronplateau = ReduceLROnPlateau(monitor='val_mean_L1_distance', factor=0.5, patience=5, verbose=1, mode='min', epsilon=0.01, cooldown=0, min_lr=0.0000001)
     history_tl = model.fit_generator(
         train_generator,
