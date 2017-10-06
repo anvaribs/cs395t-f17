@@ -21,7 +21,7 @@ from keras import losses
 import keras.losses
 
 import keras.backend as K
-from keras.callbacks import Callback, CSVLogger, ModelCheckpoint, EarlyStopping
+from keras.callbacks import Callback, CSVLogger, ModelCheckpoint, EarlyStopping, TensorBoard, ReduceLROnPlateau
 from predict import predict
 
 import pandas as pd
@@ -324,7 +324,12 @@ def train(args):
     batch_size = int(args.batch_size)
 
     LAMBDA = int(args.lambda_val)
-    decay = float(args.decay)
+
+    if (args.decay != -1):
+        decay = float(args.decay)
+    else:
+        print('adaptive learning rate decaying ...')
+        decay = float(args.learning_rate * 1.0 / nb_epoch)
 
     # for now need to force classes of validation to be same of train somehow
     response_classes = ['1905', '1906', '1908', '1909', '1910', '1911', '1912', '1913', '1914', '1915', '1916', '1919',
@@ -345,8 +350,9 @@ def train(args):
     print("nb_val_samples: ", nb_val_samples)
     print("nb_epoch: ", nb_epoch)
     print("batch_size: ", batch_size)
-    print("decay: ", batch_size)
-    print("LAMBDA: ", batch_size)
+    print("learning_rate: ", args.learning_rate)
+    print("decay: ", decay)
+    print("LAMBDA: ", args.lambda_val)
 
     # SET DEFAULTS BASED ON ARTCHITECTURE
     ARCHITECTURE = args.model_name
@@ -471,17 +477,19 @@ def train(args):
     datenow = datetime.datetime.today().strftime('%Y-%m-%d_%H:%m')
     output_base = "m_"+datenow+"_"+args.model_name + "_" + args.loss + "_" + args.optimizer + "_lr" + str(args.learning_rate) + "_epochs" + str(nb_epoch) + "_reg"+args.regularizer+"_decay"+str(decay)
     logger_output_tl = output_base+"_tl.log"
-    csv_logger_tl = CSVLogger("logs/"+logger_output_tl)
-    weights_tl = output_base+"_tl.hdf5"
-    checkpointer_tl = ModelCheckpoint(filepath='fitted_models/'+weights_tl, verbose=1, monitor='val_mean_L1_distance', save_best_only=True)
-    early_stopping_tl = EarlyStopping(monitor='val_mean_L1_distance', patience=4)
+    csv_logger_tl = CSVLogger("logs/"+logger_output_tl, append=True)
+    weights_tl = output_base+'weights.{epoch:02d}-{val_mean_L1_distance:.2f}'+"_tl.hdf5"
+    checkpointer_tl = ModelCheckpoint(filepath='fitted_models/checkpoints/'+weights_tl, verbose=1, monitor='val_mean_L1_distance', save_best_only=True, mode = 'min')
+    early_stopping_tl = EarlyStopping(monitor='val_mean_L1_distance', patience=4, mode = 'min', verbose=1)
+    tensorboard = TensorBoard(log_dir='./fitted_models/logs', histogram_freq=10, write_images=True)
+    reducelronplateau = ReduceLROnPlateau(monitor='val_mean_L1_distance', factor=0.5, patience=5, verbose=1, mode='min', epsilon=0.01, cooldown=0, min_lr=0.0000001)
     history_tl = model.fit_generator(
         train_generator,
         epochs=nb_epoch,
         steps_per_epoch=nb_train_samples // batch_size,
         validation_data=validation_generator,
         validation_steps=nb_val_samples // batch_size,
-        callbacks=[csv_logger_tl,checkpointer_tl, early_stopping_tl],
+        callbacks=[csv_logger_tl,checkpointer_tl, early_stopping_tl, tensorboard, reducelronplateau],
         class_weight='auto')  # Amin: what is this class_weight?
 
     output_name = output_base+"_tl.model"
@@ -503,17 +511,17 @@ def train(args):
     # Once the last layer has stabilized (transfer learning), then we move onto retraining more layers (fine-tuning).
 
     logger_output_ft = output_base+"_ft.log"
-    csv_logger_ft = CSVLogger("logs/"+logger_output_ft)
+    csv_logger_ft = CSVLogger("logs/"+logger_output_ft, append=True)
     weights_ft = output_base+"_ft.hdf5"
-    checkpointer_ft = ModelCheckpoint(filepath='fitted_models/'+weights_ft, verbose=1, monitor='val_mean_L1_distance', save_best_only=True)
-    early_stopping_ft = EarlyStopping(monitor='val_mean_L1_distance', patience=6)
+    checkpointer_ft = ModelCheckpoint(filepath='fitted_models/checkpoints/'+weights_ft, verbose=1, monitor='val_mean_L1_distance', save_best_only=True)
+    early_stopping_ft = EarlyStopping(monitor='val_mean_L1_distance', patience=6, mode = 'min', verbose=1)
     history_ft = model.fit_generator(
         train_generator,
         epochs=nb_epoch,
         steps_per_epoch=nb_train_samples / batch_size,
         validation_data=validation_generator,
         validation_steps=nb_val_samples / batch_size,
-        callbacks=[csv_logger_ft,checkpointer_ft,early_stopping_ft],
+        callbacks=[csv_logger_ft,checkpointer_ft,early_stopping_ft, tensorboard, reducelronplateau],
         class_weight='auto')
 
     output_name = output_base+"_ft.model"
