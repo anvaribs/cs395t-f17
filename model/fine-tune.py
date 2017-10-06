@@ -3,10 +3,12 @@ import sys
 import glob
 import argparse
 import matplotlib.pyplot as plt
-
+from skimage.io import imread
 from keras import __version__
+from PIL import Image
 # from keras.applications.inception_v3 import InceptionV3, preprocess_input
 # from keras.applications.vgg16 import VGG16
+import keras
 from keras.applications import vgg16, vgg19, inception_v3, xception, resnet50
 from keras.models import Model
 from keras.models import load_model
@@ -17,16 +19,18 @@ from keras.optimizers import SGD
 from keras import regularizers
 import keras.backend as K
 from keras.callbacks import Callback, CSVLogger, ModelCheckpoint
-from predict import predict, evaluate_model
+from predict import predict
 
 import keras.backend as K # added a comment just to push
 
 import pandas as pd
+import numpy as np
 from shutil import copyfile
 
 from keras.utils import plot_model
 import code  # https://www.digitalocean.com/community/tutorials/how-to-debug-python-with-an-interactive-console
 import datetime
+import pdb
 
 
 #default for inceptionv3
@@ -520,9 +524,12 @@ def evaluate_model():
 
     target_size = (299, 299) #fixed size for InceptionV3 architecture 
     modelname = "inceptionv3_categorical_crossentropy_rmsprop_lr0.0001_epochs2_regnone_tl.model"
-    import pdb; pdb.set_trace()
+    
+    keras.metrics.min_L1_distance= min_L1_distance
+    keras.metrics.max_L1_distance= max_L1_distance
+    keras.metrics.mean_L1_distance= mean_L1_distance
     model = load_model("./fitted_models/" + modelname)
-    output = []
+    
 
     # this is the address on microdeep
     # glob_path = '/home/farzan15/cs395t-f17/data/yearbook/A/A/*'
@@ -532,13 +539,15 @@ def evaluate_model():
     main_path = '/home/farzan15/cs395t-f17/data/yearbook/train/'
     # read training data
     lines_train = [line.rstrip('\n') for line in open('../data/yearbook/yearbook_train.txt')]
-    for lines in lines_train:
+    n_exm = 1000  # specify the number of examples for which you want to make predictions
+    output = np.zeros(n_exm, 2)
+    for lines in lines_train[:n_exm]:
         part_path, label = lines.split("\t")
         full_path = main_path + part_path 
-        img = imread(full_path)
-        import pdb; pdb.set_trace()
-
-        output.append(predict(model, img, target_size), label)
+        # img2 = imread(full_path)
+        img = Image.open(full_path)  # we need to read the image using PIL.Image
+        output.append([np.argmax(predict(model, img, target_size)), label] )
+    pdb.set_trace()
     return output
 
 
@@ -577,4 +586,4 @@ if __name__ == "__main__":
 
     # Using TensorFlow backend.
     # Found 22840 images belonging to 2 classes.
-    # Found 5009 images belonging to 2 classes.
+    # Found 5009 images belonging to 2 classes.nn

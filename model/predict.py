@@ -1,7 +1,7 @@
 import sys
 import argparse
 import numpy as np
-from PIL import Image
+
 import requests
 from io import BytesIO
 import matplotlib.pyplot as plt
@@ -34,39 +34,38 @@ def predict(model, img, target_size):
   x = np.expand_dims(x, axis=0)
   x = preprocess_input(x)
   preds = model.predict(x)
-  import pdb; pdb.set_trace()
   return preds[0]
 
-def evaluate_model():
-  """Makes predictions on input images and calls the conf_matrix
-  ARGS:
+# def evaluate_model():
+#   """Makes predictions on input images and calls the conf_matrix
+#   ARGS:
 
 
-  Returns:
-  """
+#   Returns:
+#   """
 
-  target_size = (299, 299) #fixed size for InceptionV3 architecture 
-  modelname = "inceptionv3_categorical_crossentropy_rmsprop_lr0.0001_epochs2_regnone_tl.model"
-  import pdb; pdb.set_trace()
-  model = load_model("./fitted_models/" + modelname)
-  output = []
+#   target_size = (299, 299) #fixed size for InceptionV3 architecture 
+#   modelname = "inceptionv3_categorical_crossentropy_rmsprop_lr0.0001_epochs2_regnone_tl.model"
+#   import pdb; pdb.set_trace()
+#   model = load_model("./fitted_models/" + modelname)
+#   output = []
 
-  # this is the address on microdeep
-  # glob_path = '/home/farzan15/cs395t-f17/data/yearbook/A/A/*'
-  # filepaths = glob.glob(glob_path)
+#   # this is the address on microdeep
+#   # glob_path = '/home/farzan15/cs395t-f17/data/yearbook/A/A/*'
+#   # filepaths = glob.glob(glob_path)
 
 
-  main_path = '/home/farzan15/cs395t-f17/data/yearbook/train/'
-  # read training data
-  lines_train = [line.rstrip('\n') for line in open('../data/yearbook/yearbook_train.txt')]
-  for lines in lines_train:
-    part_path, label = lines.split("\t")
-    full_path = main_path + part_path 
-    img = imread(full_path)
-    import pdb; pdb.set_trace()
+#   main_path = '/home/farzan15/cs395t-f17/data/yearbook/train/'
+#   # read training data
+#   lines_train = [line.rstrip('\n') for line in open('../data/yearbook/yearbook_train.txt')]
+#   for lines in lines_train:
+#     part_path, label = lines.split("\t")
+#     full_path = main_path + part_path 
+#     img = imread(full_path)
+#     import pdb; pdb.set_trace()
 
-    output.append(predict(model, img, target_size), label)
-  return output
+#     output.append(predict(model, img, target_size), label)
+#   return output
 
 
 def plot_preds(image, preds):
