@@ -10,7 +10,6 @@ if __name__ == "__main__":
     a.add_argument("--data_dir", default='../data/yearbook')
     a.add_argument("--input_dir", default="train")
     a.add_argument("--valid_dir", default="valid")
-    a.add_argument("--model_name", default="inceptionv3")
     a.add_argument("--train_file", default="yearbook_train.txt")
     a.add_argument("--valid_file", default="yearbook_valid.txt")
     args = a.parse_args()
@@ -26,7 +25,8 @@ if __name__ == "__main__":
                     "' --model_name='"+row.architecture+"' --optimizer='"+row.optimizer+\
                     "' --loss='"+row.loss+"' --learning_rate="+str(row.learning_rate)+\
                     " --nb_epoch="+str(row.epochs)+" --batch_size="+str(row.batch_size)+\
-                    " --regularizer='"+str(row.regularizer)+"' --reg_rate="+str(row.batch_size)
+                    " --regularizer='"+str(row.regularizer)+"' --reg_rate="+str(row.batch_size)+\
+                    " --decay='"+str(row.decay)+"' --lambda_val="+str(row.lambda_val)
 
         print(syscmd)
         os.system(syscmd)
