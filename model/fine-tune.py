@@ -18,6 +18,7 @@ from keras import optimizers
 from keras.optimizers import SGD
 from keras import regularizers
 from keras import losses
+import keras.losses
 
 import keras.backend as K
 from keras.callbacks import Callback, CSVLogger, ModelCheckpoint
@@ -100,6 +101,11 @@ def categorical_crossentropy_mean_absoulute_error_001(y_true, y_pred):
     year_true = K.cast(K.argmax(y_true,axis = -1), 'float32')
     return  (K.categorical_crossentropy(y_true, y_pred) + K.cast_to_floatx(0.01) * K.abs(year_pred - year_true))
 
+
+
+keras.losses.categorical_crossentropy_mean_squared_error_1 = categorical_crossentropy_mean_squared_error_1
+keras.losses.categorical_crossentropy_mean_squared_error_01 = categorical_crossentropy_mean_squared_error_01
+keras.losses.categorical_crossentropy_mean_squared_error_001 = categorical_crossentropy_mean_squared_error_001
 
 
 
@@ -227,7 +233,7 @@ def setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, optimizer_i
     Args:
       model: keras model
     """
-    
+
     print('Number of trainable weight tensors '
       'before starting the fine-tuning step:', len(model.trainable_weights))
 
