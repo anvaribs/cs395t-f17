@@ -5,6 +5,9 @@ from PIL import Image
 import requests
 from io import BytesIO
 import matplotlib.pyplot as plt
+from skimage.io import imread
+import glob
+# from tqdm import tqdm
 
 from keras.preprocessing import image
 from keras.models import load_model
@@ -31,14 +34,38 @@ def predict(model, img, target_size):
   x = np.expand_dims(x, axis=0)
   x = preprocess_input(x)
   preds = model.predict(x)
+  import pdb; pdb.set_trace()
   return preds[0]
+
+def evaluate_model():
+  """Makes predictions on input images and calls the conf_matrix
+  ARGS:
+
+
+  Returns:
+  """
+
+  target_size = (299, 299) #fixed size for InceptionV3 architecture 
+  # modelname = 
+  model = load_model("./fitted_models" + modelname)
+  output = []
+
+  mylist = dir(hdf5_getters)
+  # this is the address on microdeep
+  glob_path = '/home/farzan15/cs395t-f17/data/yearbook/A/A/*'
+  filepaths = glob.glob(glob_path)
+  for filepath in filepaths:
+    img = imread(filepath)
+    import pdb; pdb.set_trace()
+    output.append(predict(model, img, target_size))
+  return output
 
 
 def plot_preds(image, preds):
   """Displays image and the top-n predicted probabilities in a bar graph
   Args:
-    image: PIL image
-    preds: list of predicted labels and their probabilities
+  image: PIL image
+  preds: list of predicted labels and their probabilities
   """
   print(preds)
   code.interact(local=locals())

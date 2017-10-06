@@ -17,10 +17,9 @@ from keras.optimizers import SGD
 from keras import regularizers
 import keras.backend as K
 from keras.callbacks import Callback, CSVLogger, ModelCheckpoint
-from predict import predict
+from predict import predict, evaluate_model
 
 import keras.backend as K # added a comment just to push
-
 
 import pandas as pd
 from shutil import copyfile
@@ -475,7 +474,7 @@ def plot_training(modelname,model,history):
     val_loss = history.history['val_loss']
     mean_L1 = history.history['mean_L1_distance']
     val_mean_L1 = history.history['val_mean_L1_distance']
-
+    # just to test SFTP
 
     epochs = range(len(acc))
 
@@ -511,25 +510,7 @@ def plot_training(modelname,model,history):
 
     plot_model(model, to_file="fitted_models/"+modelname + '_keras.png')
 
-def evaluate(model_name):
 
-    # preprocess_input = base_model.preprocess_input
-
-
-    # train_datagen = ImageDataGenerator(
-    #     preprocessing_function=preprocess_input,
-    #     rotation_range=30,
-    #     width_shift_range=0.2,
-    #     height_shift_range=0.2,
-    #     shear_range=0.2,
-    #     zoom_range=0.2,
-    #     horizontal_flip=True
-    img=imread("./data/yearbook/test/F/*")
-    import pdb; pdb.set_trace()
-    target_size = (299, 299) #fixed size for InceptionV3 architecture 
-    model = load_model("./fitted_models" + modelname)
-
-    output = predict(model, img, target_size)
 
 
 
@@ -559,9 +540,7 @@ if __name__ == "__main__":
         print("directory to data does not exist")
         sys.exit(1)
 
-    # model = train(args)
-    model_name = "inceptionv3_categorical_crossentropy_rmsprop_lr0.0001_epochs1_regnone_tl.model_train_val_acc.png"
-    evaluate(model_name)  # this is mainly used for confusion matr
+    evaluate_model()  # this is mainly used for confusion matr
     
 
     # Using TensorFlow backend.
