@@ -422,7 +422,7 @@ def train(args):
     setup_to_transfer_learn(model, base_model, args.optimizer, args.loss, float(args.learning_rate),decay)
 
     datenow = datetime.datetime.today().strftime('%Y-%m-%d_%H:%m')
-    output_base = "m_"+datenow+"_"args.model_name + "_" + args.loss + "_" + args.optimizer + "_lr" + str(args.learning_rate) + "_epochs" + str(nb_epoch) + "_reg"+args.regularizer+"_decay"+str(decay)
+    output_base = "m_"+datenow+"_"+args.model_name + "_" + args.loss + "_" + args.optimizer + "_lr" + str(args.learning_rate) + "_epochs" + str(nb_epoch) + "_reg"+args.regularizer+"_decay"+str(decay)
     logger_output_tl = output_base+"_tl.log"
     csv_logger_tl = CSVLogger("logs/"+logger_output_tl)
     weights_tl = output_base+"_tl.hdf5"
