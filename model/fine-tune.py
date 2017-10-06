@@ -478,7 +478,7 @@ def train(args):
     output_base = "m_"+datenow+"_"+args.model_name + "_" + args.loss + "_" + args.optimizer + "_lr" + str(args.learning_rate) + "_epochs" + str(nb_epoch) + "_reg"+args.regularizer+"_decay"+str(decay)
     logger_output_tl = output_base+"_tl.log"
     csv_logger_tl = CSVLogger("logs/"+logger_output_tl, append=True)
-    weights_tl = output_base+'weights.{epoch:02d}-{val_mean_L1_distance:.2f}'+"_tl.hdf5"
+    weights_tl = output_base+"_tl.hdf5"
     checkpointer_tl = ModelCheckpoint(filepath='fitted_models/checkpoints/'+weights_tl, verbose=1, monitor='val_mean_L1_distance', save_best_only=True, mode = 'min')
     early_stopping_tl = EarlyStopping(monitor='val_mean_L1_distance', patience=4, mode = 'min', verbose=1)
     tensorboard = TensorBoard(log_dir='./fitted_models/logs', histogram_freq=0, write_images=True)
