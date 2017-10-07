@@ -113,6 +113,10 @@ def categorical_crossentropy_mean_absoulute_error_001(y_true, y_pred):
     return  (K.categorical_crossentropy(y_true, y_pred) + K.cast_to_floatx(0.01) * K.abs(year_pred - year_true))
 
 
+def ultimate_loss_function(y_true, y_pred):
+    return (K.categorical_crossentropy(y_true, y_pred) +
+            K.cast_to_floatx(1.0)*K.mean(K.abs(y_pred - y_true), axis=-1))
+
 
 keras.losses.categorical_crossentropy_mean_squared_error_1 = categorical_crossentropy_mean_squared_error_1
 keras.losses.categorical_crossentropy_mean_squared_error_01 = categorical_crossentropy_mean_squared_error_01
@@ -120,6 +124,7 @@ keras.losses.categorical_crossentropy_mean_squared_error_001 = categorical_cross
 keras.losses.categorical_crossentropy_mean_absoulute_error_1 = categorical_crossentropy_mean_absoulute_error_1
 keras.losses.categorical_crossentropy_mean_absoulute_error_01 = categorical_crossentropy_mean_absoulute_error_01
 keras.losses.categorical_crossentropy_mean_absoulute_error_001 = categorical_crossentropy_mean_absoulute_error_001
+keras.losses.ultimate_loss_function = ultimate_loss_function
 
 
 
