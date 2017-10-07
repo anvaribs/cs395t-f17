@@ -288,7 +288,7 @@ def setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, optimizer_i
     # ing should be done with a very slow learning rate, and typically with the SGD optimizer rather than an
     # adaptative learning rate optimizer such as RMSProp. This is to make sure that the magnitude of the updates stays
     # very small, so as not to wreck the previously learned features.
-    model.compile(optimizer=optimizers.SGD(lr = learning_rate/10, momentum=9.0), loss=loss_in,
+    model.compile(optimizer=optimizer_ft, loss=loss_in,
                   metrics=['acc', 'top_k_categorical_accuracy', mean_L1_distance, min_L1_distance, max_L1_distance])
 
 
@@ -317,11 +317,11 @@ def train(args):
 
     LAMBDA = int(args.lambda_val)
 
-    if (args.decay != -1):
+    if (float(args.decay) != -1):
         decay = float(args.decay)
     else:
         print('adaptive learning rate decaying ...')
-        decay = float(args.learning_rate * 1.0 / nb_epoch)
+        decay = float(args.learning_rate) * 1.0 / nb_epoch
 
     # for now need to force classes of validation to be same of train somehow
     response_classes = ['1905', '1906', '1908', '1909', '1910', '1911', '1912', '1913', '1914', '1915', '1916', '1919',
@@ -481,7 +481,7 @@ def train(args):
         steps_per_epoch=nb_train_samples // batch_size,
         validation_data=validation_generator,
         validation_steps=nb_val_samples // batch_size,
-        callbacks=[csv_logger_tl,checkpointer_tl, tensorboard, reducelronplateau],
+        callbacks=[csv_logger_tl,checkpointer_tl, tensorboard, reducelronplateau, early_stopping_tl],
         class_weight='auto')  # Amin: what is this class_weight?
 
     output_name = output_base+"_tl.model"
@@ -516,7 +516,7 @@ def train(args):
         steps_per_epoch=nb_train_samples / batch_size,
         validation_data=validation_generator,
         validation_steps=nb_val_samples / batch_size,
-        callbacks=[csv_logger_ft,checkpointer_ft,tensorboard, reducelronplateau],
+        callbacks=[csv_logger_ft,checkpointer_ft,tensorboard, reducelronplateau, early_stopping_ft],
         class_weight='auto')
 
     output_name = output_base+"_ft.model"
@@ -770,7 +770,7 @@ if __name__ == "__main__":
     a.add_argument("--learning_rate", default=LEARNING_RATE)
     a.add_argument("--regularizer", default='none')
     a.add_argument("--reg_rate", default=0)
-    a.add_argument("--decay", default=0)
+    a.add_argument("--decay", default='-1')
     a.add_argument("--lambda_val", default=1)
     a.add_argument("--output_model_file", default="inceptionv3-ft.model")
     a.add_argument("--plot", action="store_true")
