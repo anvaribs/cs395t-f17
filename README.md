@@ -135,3 +135,15 @@ https://coderwall.com/p/ohk6cg/remote-access-to-ipython-notebooks-via-ssh
 - ON MICRODEEP:    ipython notebook --no-browser --port=8890
 - ON LAPTOP: ssh -N -p 52617 -f -L localhost:8891:localhost:8890 farzan15@microdeep.ece.utexas.edu
 - ON LAPTOP CHROME BROWSER:  localhost:8891
+
+
+## How ro predict based on a model and a dataset (train or valid)
+run the following from model directory:
+
+python fine-tune.py --make_conf_mat="yes" --conf_mat_dataset="train" --conf_mat_model = "PUT MODEL NAME HERE"
+
+if you want to run it on validation data put valid instead of train
+
+this command prododuces predictions and stored the predictions and true labels. The next step is to use the model/plot/conf_matrix.ipynb
+
+once you are in the ipython, you need to specify the dataset of interest, if the predictions for that dataset are stored, it will read it and find confusion matrix and plot it. It will also produce min, mean, max L1 
