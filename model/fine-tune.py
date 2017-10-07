@@ -635,7 +635,7 @@ def plot_training(modelname,model,history):
     #this causes conflicts with python 3.6 (it was built on 2.7)
     #plot_model(model, to_file="fitted_models/"+modelname + '_keras.png')
 
-def predict_batch():
+def predict_batch(model_name):
     """Makes predictions on input images and calls the conf_matrix
     ARGS:
 
@@ -659,27 +659,27 @@ def predict_batch():
 
     target_size = (299, 299) #fixed size for InceptionV3 architecture 
     # modelname = "inceptionv3_categorical_crossentropy_rmsprop_lr0.0001_epochs2_regnone_tl.model"
-    modelname = "m_2017-10-06_02:10_inceptionv3_categorical_crossentropy_adam_lr0.001_epochs50_regnone_decay0.0_ft.model"
+    modelname = model_name
     keras.metrics.min_L1_distance= min_L1_distance
     keras.metrics.max_L1_distance= max_L1_distance
     keras.metrics.mean_L1_distance= mean_L1_distance
     print("loading model ...")
-    model = load_model("./fitted_models/" + modelname)
-    print("model loaded ...")
+    model = load_model("./fitted_models/" + model_name)
+    print("model loaded")
     # this is the address on microdeep
     # glob_path = '/home/farzan15/cs395t-f17/data/yearbook/A/A/*'
     # filepaths = glob.glob(glob_path)
 
     # this part is one way to make predictions on data
-    main_path = '/home/farzan15/cs395t-f17/data/yearbook/valid/'
+    main_path = '/home/farzan15/cs395t-f17/data/yearbook/train/'
     # read training data
-    lines_train = [line.rstrip('\n') for line in open('../data/yearbook/yearbook_valid.txt')]
-    n_exm = 1000
+    lines = [line.rstrip('\n') for line in open('../data/yearbook/yearbook_train.txt')]
+    n_exm = np.shape(lines)[0]
     model_output = np.zeros(n_exm, dtype='int32')
     gold_labels = np.zeros(n_exm, dtype='int32')
     print("making predictions...")
-    for i, lines in enumerate(lines_train[:n_exm]):
-        part_path, label = lines.split("\t")
+    for i, line in enumerate(lines[:n_exm]):
+        part_path, label = line.split("\t")
         full_path = main_path + part_path 
         # img2 = imread(full_path)
         img = Image.open(full_path)  # we need to read the image using PIL.Image
@@ -722,7 +722,7 @@ def plot_confusion_matrix(cm,
     else:
         print('Confusion matrix, without normalization')
 
-    print(cm)
+    # print(cm)
     plt.figure()
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title(title)
@@ -730,6 +730,8 @@ def plot_confusion_matrix(cm,
     tick_marks = np.arange(len(classes))
     plt.xticks(tick_marks, classes, rotation=45)
     plt.yticks(tick_marks, classes)
+    matplotlib.rc('xtick', labelsize=9) 
+    matplotlib.rc('ytick', labelsize=9) 
 
     fmt = '.2f' if normalize else 'd'
     thresh = cm.max() / 2.
@@ -744,9 +746,26 @@ def plot_confusion_matrix(cm,
     plt.savefig("./plots/conf_matrix.pdf")
 
 
-
-
-
+def conf_matrix(model_name):
+    model_output, gold_labels = predict_batch(model_name)
+    np.savetxt("./plots/model_output.csv", model_output, delimiter=",", fmt="%d")
+    np.savetxt("./plots/gold_labels.csv", gold_labels, delimiter=",", fmt="%d")
+    print("calculating confusion matrix ...")
+    c_mat = confusion_matrix(gold_labels, model_output)
+    np.savetxt("./plots/conf_matrix.csv", c_mat, delimiter=",", fmt="%d")
+    print("Confusion matrix:")
+    print(np.sum(np.sum(c_mat,1)))
+    print("plotting conf matrix ...")
+    plot_confusion_matrix(c_mat,normalize=False,
+                          title='Confusion matrix')
+    print("mean_l1:")
+    mean_l1 = mean_L1_distance(gold_labels, model_output)
+    print("min_l1:")
+    min_l1 = min_L1_distance(gold_labels, model_output)
+    print("max_l1:")
+    max_l1 = max_L1_distance(gold_labels, model_output)
+    print("std_l1:")
+    std_l1 = std_L1_distance(gold_labels, model_output)
 
 if __name__ == "__main__":
     # SAMPLE CALLs
@@ -772,6 +791,7 @@ if __name__ == "__main__":
     a.add_argument("--output_model_file", default="inceptionv3-ft.model")
     a.add_argument("--plot", action="store_true")
     a.add_argument("--make_conf_mat", default='no')
+    a.add_argument("--conf_mat_model", default= "m_2017-10-06_02:10_inceptionv3_categorical_crossentropy_adam_lr0.001_epochs50_regnone_decay0.0_ft.model")
 
     args = a.parse_args()
 
@@ -780,24 +800,15 @@ if __name__ == "__main__":
         sys.exit(1)
 
 
-    model = train(args)
+    # model = train(args)
     #evaluate(model, args)  # this is mainly used for confusion matr
     # Using TensorFlow backend.
     # Found 22840 images belonging to 2 classes.
     # Found 5009 images belonging to 2 classes.
 
     if args.make_conf_mat == "yes":
-        print("making predictions")
-        model_output, gold_labels = predict_batch()
-        print("calculating confusion matrix")
-        c_mat = confusion_matrix(gold_labels, model_output)
-        c_mat_pd = pd.DataFrame(c_mat)
-        c_mat_pd.to_csv("./plots/conf_matrix.csv")
-        print("Confusion matrix:")
-        print(np.sum(np.sum(c_mat,1)))
-        print("plotting conf matrix")
-        plot_confusion_matrix(c_mat,normalize=False,
-                              title='Confusion matrix')
+        conf_matrix(model_name = args.conf_mat_model)
+
 
 
     # Using TensorFlow backend.
