@@ -635,25 +635,42 @@ def plot_training(modelname,model,history):
     #this causes conflicts with python 3.6 (it was built on 2.7)
     #plot_model(model, to_file="fitted_models/"+modelname + '_keras.png')
 
-def predict_batch(model_name):
+def predict_batch(model_name, data_set):
     """Makes predictions on input images and calls the conf_matrix
     ARGS:
 
 
     Returns:
     """
-    mapping = {0: '1905', 1: '1906', 2: '1908', 3: '1909', 4: '1910', 5: '1911', 6: '1912', 7: '1913', 8: '1914', 9: '1915',
-               10: '1916', 11: '1919', 12: '1922', 13: '1923', 14: '1924', 15: '1925', 16: '1926', 17: '1927', 18: '1928',
-               19: '1929', 20: '1930', 21: '1931', 22: '1932', 23: '1933', 24: '1934', 25: '1935', 26: '1936', 27: '1937',
-               28: '1938', 29: '1939', 30: '1940', 31: '1941', 32: '1942', 33: '1943', 34: '1944', 35: '1945', 36: '1946',
-               37: '1947', 38: '1948', 39: '1949', 40: '1950', 41: '1951', 42: '1952', 43: '1953', 44: '1954', 45: '1955',
-               46: '1956', 47: '1957', 48: '1958', 49: '1959', 50: '1960', 51: '1961', 52: '1962', 53: '1963', 54: '1964',
-               55: '1965', 56: '1966', 57: '1967', 58: '1968', 59: '1969', 60: '1970', 61: '1971', 62: '1972', 63: '1973',
-               64: '1974', 65: '1975', 66: '1976', 67: '1977', 68: '1978', 69: '1979', 70: '1980', 71: '1981', 72: '1982',
-               73: '1983', 74: '1984', 75: '1985', 76: '1986', 77: '1987', 78: '1988', 79: '1989', 80: '1990', 81: '1991',
-               82: '1992', 83: '1993', 84: '1994', 85: '1995', 86: '1996', 87: '1997', 88: '1998', 89: '1999', 90: '2000',
-               91: '2001', 92: '2002', 93: '2003', 94: '2004', 95: '2005', 96: '2006', 97: '2007', 98: '2008', 99: '2009',
-               100: '2010', 101: '2011', 102: '2012', 103: '2013'}
+    mapping = {
+    0: '1905', 1: '1906', 2: '1908', 3: '1909', 4: '1910', 5: '1911', 6: '1912', 7: '1913', 8: '1914', 9: '1915',
+    10: '1916', 11: '1919', 12: '1922', 13: '1923', 14: '1924', 15: '1925', 16: '1926', 17: '1927', 18: '1928',
+    19: '1929', 20: '1930', 21: '1931', 22: '1932', 23: '1933', 24: '1934', 25: '1935', 26: '1936', 27: '1937',
+    28: '1938', 29: '1939', 30: '1940', 31: '1941', 32: '1942', 33: '1943', 34: '1944', 35: '1945', 36: '1946',
+    37: '1947', 38: '1948', 39: '1949', 40: '1950', 41: '1951', 42: '1952', 43: '1953', 44: '1954', 45: '1955',
+    46: '1956', 47: '1957', 48: '1958', 49: '1959', 50: '1960', 51: '1961', 52: '1962', 53: '1963', 54: '1964',
+    55: '1965', 56: '1966', 57: '1967', 58: '1968', 59: '1969', 60: '1970', 61: '1971', 62: '1972', 63: '1973',
+    64: '1974', 65: '1975', 66: '1976', 67: '1977', 68: '1978', 69: '1979', 70: '1980', 71: '1981', 72: '1982',
+    73: '1983', 74: '1984', 75: '1985', 76: '1986', 77: '1987', 78: '1988', 79: '1989', 80: '1990', 81: '1991',
+    82: '1992', 83: '1993', 84: '1994', 85: '1995', 86: '1996', 87: '1997', 88: '1998', 89: '1999', 90: '2000',
+    91: '2001', 92: '2002', 93: '2003', 94: '2004', 95: '2005', 96: '2006', 97: '2007', 98: '2008', 99: '2009',
+    100: '2010', 101: '2011', 102: '2012', 103: '2013'}
+
+
+    inverse_mapping = {
+    '1905'  :   0   ,   '1906'  :   1   ,   '1908'  :   2   ,   '1909'  :   3   ,   '1910'  :   4   ,   '1911'  :   5   ,   '1912'  :   6   ,   '1913'  :   7   ,   '1914'  :   8   ,  '1915' : 9,
+    '1916'  :   10  ,   '1919'  :   11  ,   '1922'  :   12  ,   '1923'  :   13  ,   '1924'  :   14  ,   '1925'  :   15  ,   '1926'  :   16  ,   '1927'  :   17  ,   '1928'  :   18  ,
+    '1929'  :   19  ,   '1930'  :   20  ,   '1931'  :   21  ,   '1932'  :   22  ,   '1933'  :   23  ,   '1934'  :   24  ,   '1935'  :   25  ,   '1936'  :   26  ,   '1937'  :   27  ,
+    '1938'  :   28  ,   '1939'  :   29  ,   '1940'  :   30  ,   '1941'  :   31  ,   '1942'  :   32  ,   '1943'  :   33  ,   '1944'  :   34  ,   '1945'  :   35  ,   '1946'  :   36  ,
+    '1947'  :   37  ,   '1948'  :   38  ,   '1949'  :   39  ,   '1950'  :   40  ,   '1951'  :   41  ,   '1952'  :   42  ,   '1953'  :   43  ,   '1954'  :   44  ,   '1955'  :   45  ,
+    '1956'  :   46  ,   '1957'  :   47  ,   '1958'  :   48  ,   '1959'  :   49  ,   '1960'  :   50  ,   '1961'  :   51  ,   '1962'  :   52  ,   '1963'  :   53  ,   '1964'  :   54  ,
+    '1965'  :   55  ,   '1966'  :   56  ,   '1967'  :   57  ,   '1968'  :   58  ,   '1969'  :   59  ,   '1970'  :   60  ,   '1971'  :   61  ,   '1972'  :   62  ,   '1973'  :   63  ,
+    '1974'  :   64  ,   '1975'  :   65  ,   '1976'  :   66  ,   '1977'  :   67  ,   '1978'  :   68  ,   '1979'  :   69  ,   '1980'  :   70  ,   '1981'  :   71  ,   '1982'  :   72  ,
+    '1983'  :   73  ,   '1984'  :   74  ,   '1985'  :   75  ,   '1986'  :   76  ,   '1987'  :   77  ,   '1988'  :   78  ,   '1989'  :   79  ,   '1990'  :   80  ,   '1991'  :   81  ,
+    '1992'  :   82  ,   '1993'  :   83  ,   '1994'  :   84  ,   '1995'  :   85  ,   '1996'  :   86  ,   '1997'  :   87  ,   '1998'  :   88  ,   '1999'  :   89  ,   '2000'  :   90  ,
+    '2001'  :   91  ,   '2002'  :   92  ,   '2003'  :   93  ,   '2004'  :   94  ,   '2005'  :   95  ,   '2006'  :   96  ,   '2007'  :   97  ,   '2008'  :   98  ,   '2009'  :   99  ,
+    '2010'  :   100 ,   '2011'  :   101 ,   '2012'  :   102 ,   '2013'  :   103 }                                                                                
+
 
 
 
@@ -669,30 +686,27 @@ def predict_batch(model_name):
     # this is the address on microdeep
     # glob_path = '/home/farzan15/cs395t-f17/data/yearbook/A/A/*'
     # filepaths = glob.glob(glob_path)
-
     # this part is one way to make predictions on data
-    main_path = '/home/farzan15/cs395t-f17/data/yearbook/train/'
+    main_path_img = '/home/farzan15/cs395t-f17/data/yearbook/' + data_set + "/"
     # read training data
-    lines = [line.rstrip('\n') for line in open('../data/yearbook/yearbook_train.txt')]
+    relative_path_txt = '../data/yearbook/yearbook_' + data_set + '.txt'
+    lines = [line.rstrip('\n') for line in open(relative_path_txt)]
     n_exm = np.shape(lines)[0]
-    model_output = np.zeros(n_exm, dtype='int32')
-    gold_labels = np.zeros(n_exm, dtype='int32')
+    y_pred = np.zeros(n_exm, dtype='int32')
+    y_true = np.zeros(n_exm, dtype='int32')
     print("making predictions...")
     for i, line in enumerate(lines[:n_exm]):
-        part_path, label = line.split("\t")
-        full_path = main_path + part_path 
+        part_path_img, label = line.split("\t")
+        full_path_img = main_path_img + part_path_img 
         # img2 = imread(full_path)
-        img = Image.open(full_path)  # we need to read the image using PIL.Image
-        model_output[i] = mapping[np.argmax(predict(model, img, target_size))]
-        gold_labels[i] = label
-
-
-    return model_output, gold_labels
-
+        img = Image.open(full_path_img)  # we need to read the image using PIL.Image
+        y_pred[i] = np.argmax(predict(model, img, target_size))
+        y_true[i] = inverse_mapping[label]
+    return y_pred, y_true
 
 
 
-def plot_confusion_matrix(cm,
+def plot_confusion_matrix(y_true, y_pred,
                           normalize=False,
                           title='Confusion matrix'):
     """
@@ -700,7 +714,8 @@ def plot_confusion_matrix(cm,
     Normalization can be applied by setting `normalize=True`.
     """
     cmap=plt.cm.YlOrRd
-
+    normalize=False
+    title='Confusion matrix'
     mapping = {0: '1905', 1: '1906', 2: '1908', 3: '1909', 4: '1910', 5: '1911', 6: '1912', 7: '1913', 8: '1914', 9: '1915',
                10: '1916', 11: '1919', 12: '1922', 13: '1923', 14: '1924', 15: '1925', 16: '1926', 17: '1927', 18: '1928',
                19: '1929', 20: '1930', 21: '1931', 22: '1932', 23: '1933', 24: '1934', 25: '1935', 26: '1936', 27: '1937',
@@ -714,58 +729,56 @@ def plot_confusion_matrix(cm,
                91: '2001', 92: '2002', 93: '2003', 94: '2004', 95: '2005', 96: '2006', 97: '2007', 98: '2008', 99: '2009',
                100: '2010', 101: '2011', 102: '2012', 103: '2013'}
 
-    classes = mapping.values()
+    c_mat = confusion_matrix(y_true, y_pred)
+    np.savetxt("./plots/conf_matrix.csv", c_mat, delimiter=",", fmt="%d")
+   
+    print("Confusion matrix:")
+    print(np.sum(np.sum(c_mat,1)))
+    print("plotting conf matrix ...")
+    classes_val = mapping.values()
+    classes = np.fromiter(iter(classes_val), dtype=int) # turn into numpy array
+    classes_index1 = mapping.keys()
+    classes_index = np.fromiter(iter(classes_index1), dtype=int) # turn into numpy array
 
     if normalize:
-        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-        print("Normalized confusion matrix")
+        c_mat = c_mat.astype('float') / c_mat.sum(axis=1)[:, np.newaxis]
+        print("caculating Normalized confusion matrix")
     else:
-        print('Confusion matrix, without normalization')
+        print('calculating Confusion matrix, without normalization')
 
+
+        
     # print(cm)
     plt.figure()
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.imshow(c_mat, interpolation='nearest', cmap=cmap)
+    frame1 = plt.gca()
     plt.title(title)
     plt.colorbar()
     tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation=45)
-    plt.yticks(tick_marks, classes)
-    matplotlib.rc('xtick', labelsize=9) 
-    matplotlib.rc('ytick', labelsize=9) 
 
-    fmt = '.2f' if normalize else 'd'
-    thresh = cm.max() / 2.
-    # for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-    #     plt.text(j, i, format(cm[i, j], fmt),
-    #              horizontalalignment="center",
-    #              color="white" if cm[i, j] > thresh else "black")
+    plt.xticks(tick_marks[0:-1:4], classes_index[0:-1:4], rotation=45, fontsize=8)
+    plt.yticks(tick_marks[0:-1:4], classes_index[0:-1:4], fontsize=8)
+    # plt.xticks(tick_marks[0:-1:4], rotation=45, fontsize=8)
+    # plt.yticks(tick_marks[0:-1:4], fontsize=8)
 
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     plt.savefig("./plots/conf_matrix.pdf")
+    plt.show()
 
 
-def conf_matrix(model_name):
-    model_output, gold_labels = predict_batch(model_name)
-    np.savetxt("./plots/model_output.csv", model_output, delimiter=",", fmt="%d")
-    np.savetxt("./plots/gold_labels.csv", gold_labels, delimiter=",", fmt="%d")
+def conf_matrix(model_name, data_set):
+    y_pred, y_true = predict_batch(model_name, data_set)
+    np.savetxt("./plots/y_pred.csv", y_pred, delimiter=",", fmt="%d")
+    np.savetxt("./plots/y_true.csv", y_true, delimiter=",", fmt="%d")
     print("calculating confusion matrix ...")
-    c_mat = confusion_matrix(gold_labels, model_output)
-    np.savetxt("./plots/conf_matrix.csv", c_mat, delimiter=",", fmt="%d")
-    print("Confusion matrix:")
-    print(np.sum(np.sum(c_mat,1)))
-    print("plotting conf matrix ...")
-    plot_confusion_matrix(c_mat,normalize=False,
+
+
+    plot_confusion_matrix(y_true, y_pred, normalize=False,
                           title='Confusion matrix')
-    print("mean_l1:")
-    mean_l1 = mean_L1_distance(gold_labels, model_output)
-    print("min_l1:")
-    min_l1 = min_L1_distance(gold_labels, model_output)
-    print("max_l1:")
-    max_l1 = max_L1_distance(gold_labels, model_output)
-    print("std_l1:")
-    std_l1 = std_L1_distance(gold_labels, model_output)
+    print("normalized l1 distance between y_true and y_pred:")
+    print (np.linalg.norm((y_true - y_pred), ord=1)/len(y_true))
 
 if __name__ == "__main__":
     # SAMPLE CALLs
@@ -792,6 +805,7 @@ if __name__ == "__main__":
     a.add_argument("--plot", action="store_true")
     a.add_argument("--make_conf_mat", default='no')
     a.add_argument("--conf_mat_model", default= "m_2017-10-06_02:10_inceptionv3_categorical_crossentropy_adam_lr0.001_epochs50_regnone_decay0.0_ft.model")
+    a.add_argument("--conf_mat_dataset", default= "train")
 
     args = a.parse_args()
 
@@ -801,13 +815,13 @@ if __name__ == "__main__":
 
 
     # model = train(args)
-    #evaluate(model, args)  # this is mainly used for confusion matr
+    # evaluate(model, args)  # this is mainly used for confusion matr
     # Using TensorFlow backend.
     # Found 22840 images belonging to 2 classes.
     # Found 5009 images belonging to 2 classes.
 
     if args.make_conf_mat == "yes":
-        conf_matrix(model_name = args.conf_mat_model)
+        conf_matrix(model_name = args.conf_mat_model, data_set = args.conf_mat_dataset)
 
 
 
