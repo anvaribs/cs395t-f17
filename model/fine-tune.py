@@ -481,7 +481,7 @@ def train(args):
         steps_per_epoch=nb_train_samples // batch_size,
         validation_data=validation_generator,
         validation_steps=nb_val_samples // batch_size,
-        callbacks=[csv_logger_tl,checkpointer_tl, tensorboard],
+        callbacks=[csv_logger_tl,checkpointer_tl, tensorboard, reducelronplateau, early_stopping_tl],
         class_weight='auto')  # Amin: what is this class_weight?
 
     output_name = output_base+"_tl.model"
@@ -513,7 +513,7 @@ def train(args):
         steps_per_epoch=nb_train_samples / batch_size,
         validation_data=validation_generator,
         validation_steps=nb_val_samples / batch_size,
-        callbacks=[csv_logger_ft,checkpointer_ft,tensorboard],
+        callbacks=[csv_logger_ft,checkpointer_ft,tensorboard, reducelronplateau, early_stopping_ft],
         class_weight='auto')
 
     output_name = output_base+"_ft.model"
