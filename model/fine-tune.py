@@ -745,7 +745,12 @@ def plot_confusion_matrix(y_true, y_pred, normalize=False,):
                100: '2010', 101: '2011', 102: '2012', 103: '2013'}
 
     c_mat = confusion_matrix(y_true, y_pred)
-    np.savetxt("./plots/conf_matrix.csv", c_mat, delimiter=",", fmt="%d")
+
+    # conf_matrix_pdf_path = "./plots/conf_matrix_pdf_" + data_set + ".pdf"
+    # plt.savefig(conf_matrix_pdf_path)
+
+    # conf_matrix_path = "./plots/conf_matrix_" + data_set + ".csv"
+    # np.savetxt(conf_matrix_path, c_mat, delimiter=",", fmt="%d")
    
     print("Confusion matrix sum:")
     print(np.sum(np.sum(c_mat,1)))
@@ -778,7 +783,6 @@ def plot_confusion_matrix(y_true, y_pred, normalize=False,):
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-    plt.savefig("./plots/conf_matrix.pdf")
     plt.show()
 
 
