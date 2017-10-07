@@ -526,19 +526,21 @@ def predict_batch():
     keras.metrics.min_L1_distance= min_L1_distance
     keras.metrics.max_L1_distance= max_L1_distance
     keras.metrics.mean_L1_distance= mean_L1_distance
+    print("loading model ...")
     model = load_model("./fitted_models/" + modelname)
-
+    print("model loaded ...")
     # this is the address on microdeep
-    glob_path = '/home/farzan15/cs395t-f17/data/yearbook/A/A/*'
-    filepaths = glob.glob(glob_path)
+    # glob_path = '/home/farzan15/cs395t-f17/data/yearbook/A/A/*'
+    # filepaths = glob.glob(glob_path)
 
     # this part is one way to make predictions on data
-    main_path = '/home/farzan15/cs395t-f17/data/yearbook/train/'
+    main_path = '/home/farzan15/cs395t-f17/data/yearbook/valid/'
     # read training data
-    lines_train = [line.rstrip('\n') for line in open('../data/yearbook/yearbook_train.txt')]
+    lines_train = [line.rstrip('\n') for line in open('../data/yearbook/yearbook_valid.txt')]
     n_exm = 1000
     model_output = np.zeros(n_exm, dtype='int32')
     gold_labels = np.zeros(n_exm, dtype='int32')
+    print("making predictions...")
     for i, lines in enumerate(lines_train[:n_exm]):
         part_path, label = lines.split("\t")
         full_path = main_path + part_path 
@@ -560,7 +562,8 @@ def plot_confusion_matrix(cm,
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
     """
-    cmap=plt.cm.Blues
+    cmap=plt.cm.YlOrRd
+
     mapping = {0: '1905', 1: '1906', 2: '1908', 3: '1909', 4: '1910', 5: '1911', 6: '1912', 7: '1913', 8: '1914', 9: '1915',
                10: '1916', 11: '1919', 12: '1922', 13: '1923', 14: '1924', 15: '1925', 16: '1926', 17: '1927', 18: '1928',
                19: '1929', 20: '1930', 21: '1931', 22: '1932', 23: '1933', 24: '1934', 25: '1935', 26: '1936', 27: '1937',
@@ -584,7 +587,7 @@ def plot_confusion_matrix(cm,
 
     print(cm)
     plt.figure()
-    plt.imshow(cm, interpolation='nearest')
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title(title)
     plt.colorbar()
     tick_marks = np.arange(len(classes))
@@ -593,10 +596,10 @@ def plot_confusion_matrix(cm,
 
     fmt = '.2f' if normalize else 'd'
     thresh = cm.max() / 2.
-    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        plt.text(j, i, format(cm[i, j], fmt),
-                 horizontalalignment="center",
-                 color="white" if cm[i, j] > thresh else "black")
+    # for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+    #     plt.text(j, i, format(cm[i, j], fmt),
+    #              horizontalalignment="center",
+    #              color="white" if cm[i, j] > thresh else "black")
 
     plt.tight_layout()
     plt.ylabel('True label')
@@ -638,9 +641,17 @@ if __name__ == "__main__":
 
 
     # train(args)
-
+    print("making predictions")
     model_output, gold_labels = predict_batch()
+    print("calculating confusion matrix")
     c_mat = confusion_matrix(gold_labels, model_output)
+    c_mat_pd = pd.DataFrame(c_mat)
+    c_mat_pd.to_csv("./plots/conf_matrix.csv")
+
+
+    print("Confusion matrix:")
+    print(np.sum(np.sum(c_mat,1)))
+    print("plotting conf matrix")
     plot_confusion_matrix(c_mat,normalize=False,
                           title='Confusion matrix')
     # Using TensorFlow backend.
