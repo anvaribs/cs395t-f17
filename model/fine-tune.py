@@ -473,7 +473,11 @@ def train(args):
     weights_tl = output_base+"_tl.hdf5"
     checkpointer_tl = ModelCheckpoint(filepath='fitted_models/checkpoints/'+weights_tl, verbose=1, monitor='val_mean_L1_distance', save_best_only=True, mode = 'min')
     early_stopping_tl = EarlyStopping(monitor='val_mean_L1_distance', patience=4, mode = 'min', verbose=1)
-    tensorboard = TensorBoard(log_dir='./fitted_models/logs', histogram_freq=0, write_images=True)
+
+    tensorboard_dir = "./fitted_models/tb_logs/" + output_base + "_tl"
+    os.system("mkdir " + tensorboard_dir)
+    tensorboard_tl = TensorBoard(log_dir=tensorboard_dir, histogram_freq=0, write_images=True)
+
     reducelronplateau = ReduceLROnPlateau(monitor='val_mean_L1_distance', factor=0.5, patience=5, verbose=1, mode='min', epsilon=0.01, cooldown=0, min_lr=0.0000001)
     history_tl = model.fit_generator(
         train_generator,
@@ -481,7 +485,7 @@ def train(args):
         steps_per_epoch=nb_train_samples // batch_size,
         validation_data=validation_generator,
         validation_steps=nb_val_samples // batch_size,
-        callbacks=[csv_logger_tl,checkpointer_tl, tensorboard, reducelronplateau, early_stopping_tl],
+        callbacks=[csv_logger_tl,checkpointer_tl, tensorboard_tl, reducelronplateau, early_stopping_tl],
         class_weight='auto')  # Amin: what is this class_weight?
 
     output_name = output_base+"_tl.model"
@@ -510,13 +514,18 @@ def train(args):
     weights_ft = output_base+"_ft.hdf5"
     checkpointer_ft = ModelCheckpoint(filepath='fitted_models/checkpoints/'+weights_ft, verbose=1, monitor='val_mean_L1_distance', save_best_only=True)
     early_stopping_ft = EarlyStopping(monitor='val_mean_L1_distance', patience=6, mode = 'min', verbose=1)
+
+    tensorboard_dir = "./fitted_models/tb_logs/" + output_base + "_ft"
+    os.system("mkdir " + tensorboard_dir)
+    tensorboard_ft = TensorBoard(log_dir=tensorboard_dir, histogram_freq=0, write_images=True)
+
     history_ft = model.fit_generator(
         train_generator,
         epochs=nb_epoch,
         steps_per_epoch=nb_train_samples / batch_size,
         validation_data=validation_generator,
         validation_steps=nb_val_samples / batch_size,
-        callbacks=[csv_logger_ft,checkpointer_ft,tensorboard, reducelronplateau, early_stopping_ft],
+        callbacks=[csv_logger_ft,checkpointer_ft,tensorboard_ft, reducelronplateau, early_stopping_ft],
         class_weight='auto')
 
     output_name = output_base+"_ft.model"
