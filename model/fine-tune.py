@@ -186,7 +186,7 @@ def setup_to_transfer_learn(model, base_model, optimizer_in, loss_in, learning_r
     elif optimizer_in == 'adam':
         optimizer_tl = optimizers.Adam(lr = learning_rate, decay = decay)
     elif optimizer_in == 'sgd':
-        optimizer_tl = optimizers.SGD(lr = learning_rate, momentum=9.0, nesterov=True)
+        optimizer_tl = optimizers.SGD(lr = learning_rate, momentum=0.9, nesterov=True)
     elif optimizer_in == 'adagrad':
         optimizer_tl = optimizers.Adagrad(lr = learning_rate)
 
@@ -280,7 +280,7 @@ def setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, optimizer_i
     elif optimizer_in == 'adam':
         optimizer_ft = optimizers.Adam(lr = learning_rate/10, decay=decay)
     elif optimizer_in == 'sgd':
-        optimizer_ft = optimizers.SGD(lr = learning_rate/10, momentum=9.0, nesterov=True)
+        optimizer_ft = optimizers.SGD(lr = learning_rate/10, momentum=0.9, nesterov=True)
     elif optimizer_in == 'adagrad':
         optimizer_ft = optimizers.Adagrad(lr = learning_rate/10)
       
