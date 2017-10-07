@@ -26,7 +26,7 @@ import keras.losses
 
 import keras.backend as K
 from keras.callbacks import Callback, CSVLogger, ModelCheckpoint, EarlyStopping, TensorBoard, ReduceLROnPlateau
-from predict import predict
+from predict import predict_img
 
 import keras.backend as K # added a comment just to push
 
@@ -652,7 +652,7 @@ def plot_training(modelname,model,history):
     #this causes conflicts with python 3.6 (it was built on 2.7)
     #plot_model(model, to_file="fitted_models/"+modelname + '_keras.png')
 
-def predict_batch(model_name, data_set):
+def predict_all(model_name, data_set):
     """Makes predictions on input images and calls the conf_matrix
     ARGS:
 
@@ -704,35 +704,33 @@ def predict_batch(model_name, data_set):
     # glob_path = '/home/farzan15/cs395t-f17/data/yearbook/A/A/*'
     # filepaths = glob.glob(glob_path)
     # this part is one way to make predictions on data
-    main_path_img = '/home/farzan15/cs395t-f17/data/yearbook/' + data_set + "/"
+    relative_path_img1 = '../data/yearbook/' + data_set + "/"
     # read training data
     relative_path_txt = '../data/yearbook/yearbook_' + data_set + '.txt'
     lines = [line.rstrip('\n') for line in open(relative_path_txt)]
-    n_exm = np.shape(lines)[0]
+    n_exm = np.shape(lines)[0]  # modify this number if you want to make predictions on a subset of data
     y_pred = np.zeros(n_exm, dtype='int32')
     y_true = np.zeros(n_exm, dtype='int32')
     print("making predictions...")
     for i, line in enumerate(lines[:n_exm]):
-        part_path_img, label = line.split("\t")
-        full_path_img = main_path_img + part_path_img 
+        relative_path_img2, label = line.split("\t")
+        full_path_img = relative_path_img1 + relative_path_img2
         # img2 = imread(full_path)
         img = Image.open(full_path_img)  # we need to read the image using PIL.Image
-        y_pred[i] = np.argmax(predict(model, img, target_size))
+        y_pred[i] = np.argmax(predict_img(model, img, target_size))
         y_true[i] = inverse_mapping[label]
     return y_pred, y_true
 
 
 
-def plot_confusion_matrix(y_true, y_pred,
-                          normalize=False,
-                          title='Confusion matrix'):
+def plot_confusion_matrix(y_true, y_pred, normalize=False,):
     """
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
     """
     cmap=plt.cm.YlOrRd
     normalize=False
-    title='Confusion matrix'
+    
     mapping = {0: '1905', 1: '1906', 2: '1908', 3: '1909', 4: '1910', 5: '1911', 6: '1912', 7: '1913', 8: '1914', 9: '1915',
                10: '1916', 11: '1919', 12: '1922', 13: '1923', 14: '1924', 15: '1925', 16: '1926', 17: '1927', 18: '1928',
                19: '1929', 20: '1930', 21: '1931', 22: '1932', 23: '1933', 24: '1934', 25: '1935', 26: '1936', 27: '1937',
@@ -749,11 +747,11 @@ def plot_confusion_matrix(y_true, y_pred,
     c_mat = confusion_matrix(y_true, y_pred)
     np.savetxt("./plots/conf_matrix.csv", c_mat, delimiter=",", fmt="%d")
    
-    print("Confusion matrix:")
+    print("Confusion matrix sum:")
     print(np.sum(np.sum(c_mat,1)))
     print("plotting conf matrix ...")
-    classes_val = mapping.values()
-    classes = np.fromiter(iter(classes_val), dtype=int) # turn into numpy array
+    classes_year = mapping.values()
+    classes = np.fromiter(iter(classes_year), dtype=int) # turn into numpy array
     classes_index1 = mapping.keys()
     classes_index = np.fromiter(iter(classes_index1), dtype=int) # turn into numpy array
 
@@ -763,12 +761,11 @@ def plot_confusion_matrix(y_true, y_pred,
     else:
         print('calculating Confusion matrix, without normalization')
 
-
-        
     # print(cm)
     plt.figure()
     plt.imshow(c_mat, interpolation='nearest', cmap=cmap)
     frame1 = plt.gca()
+    title='Confusion matrix'
     plt.title(title)
     plt.colorbar()
     tick_marks = np.arange(len(classes))
@@ -786,14 +783,12 @@ def plot_confusion_matrix(y_true, y_pred,
 
 
 def conf_matrix(model_name, data_set):
-    y_pred, y_true = predict_batch(model_name, data_set)
-    np.savetxt("./plots/y_pred.csv", y_pred, delimiter=",", fmt="%d")
-    np.savetxt("./plots/y_true.csv", y_true, delimiter=",", fmt="%d")
-    print("calculating confusion matrix ...")
-
-
-    plot_confusion_matrix(y_true, y_pred, normalize=False,
-                          title='Confusion matrix')
+    y_pred, y_true = predict_all(model_name, data_set)
+    y_pred_path = "./plots/y_pred_" + data_set + ".csv"
+    y_true_path = "./plots/y_true_" + data_set + ".csv"
+    np.savetxt(y_pred_path, y_pred, delimiter=",", fmt="%d")
+    np.savetxt(y_true_path, y_true, delimiter=",", fmt="%d")
+    plot_confusion_matrix(y_true, y_pred, normalize=False)
     print("normalized l1 distance between y_true and y_pred:")
     print (np.linalg.norm((y_true - y_pred), ord=1)/len(y_true))
 
