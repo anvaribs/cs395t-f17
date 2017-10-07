@@ -839,6 +839,8 @@ if __name__ == "__main__":
     if args.make_conf_mat == "yes":
         conf_matrix(model_name = args.conf_mat_model, data_set = args.conf_mat_dataset)
 
+    else:
+        model = train(args)
 
 
     # Using TensorFlow backend.
