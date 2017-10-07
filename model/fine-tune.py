@@ -113,6 +113,10 @@ def categorical_crossentropy_mean_absoulute_error_001(y_true, y_pred):
     return  (K.categorical_crossentropy(y_true, y_pred) + K.cast_to_floatx(0.01) * K.abs(year_pred - year_true))
 
 
+def ultimate_loss_function(y_true, y_pred):
+    return (K.categorical_crossentropy(y_true, y_pred) +
+            K.cast_to_floatx(1.0)*K.mean(K.abs(y_pred - y_true), axis=-1))
+
 
 keras.losses.categorical_crossentropy_mean_squared_error_1 = categorical_crossentropy_mean_squared_error_1
 keras.losses.categorical_crossentropy_mean_squared_error_01 = categorical_crossentropy_mean_squared_error_01
@@ -120,6 +124,7 @@ keras.losses.categorical_crossentropy_mean_squared_error_001 = categorical_cross
 keras.losses.categorical_crossentropy_mean_absoulute_error_1 = categorical_crossentropy_mean_absoulute_error_1
 keras.losses.categorical_crossentropy_mean_absoulute_error_01 = categorical_crossentropy_mean_absoulute_error_01
 keras.losses.categorical_crossentropy_mean_absoulute_error_001 = categorical_crossentropy_mean_absoulute_error_001
+keras.losses.ultimate_loss_function = ultimate_loss_function
 
 
 
@@ -186,7 +191,7 @@ def setup_to_transfer_learn(model, base_model, optimizer_in, loss_in, learning_r
     elif optimizer_in == 'adam':
         optimizer_tl = optimizers.Adam(lr = learning_rate, decay = decay)
     elif optimizer_in == 'sgd':
-        optimizer_tl = optimizers.SGD(lr = learning_rate, momentum=9.0, nesterov=True)
+        optimizer_tl = optimizers.SGD(lr = learning_rate, momentum=0.9, nesterov=True)
     elif optimizer_in == 'adagrad':
         optimizer_tl = optimizers.Adagrad(lr = learning_rate)
 
@@ -280,7 +285,7 @@ def setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, optimizer_i
     elif optimizer_in == 'adam':
         optimizer_ft = optimizers.Adam(lr = learning_rate/10, decay=decay)
     elif optimizer_in == 'sgd':
-        optimizer_ft = optimizers.SGD(lr = learning_rate/10, momentum=9.0, nesterov=True)
+        optimizer_ft = optimizers.SGD(lr = learning_rate/10, momentum=0.9, nesterov=True)
     elif optimizer_in == 'adagrad':
         optimizer_ft = optimizers.Adagrad(lr = learning_rate/10)
       
@@ -473,7 +478,12 @@ def train(args):
     weights_tl = output_base+"_tl.hdf5"
     checkpointer_tl = ModelCheckpoint(filepath='fitted_models/checkpoints/'+weights_tl, verbose=1, monitor='val_mean_L1_distance', save_best_only=True, mode = 'min')
     early_stopping_tl = EarlyStopping(monitor='val_mean_L1_distance', patience=4, mode = 'min', verbose=1)
-    tensorboard = TensorBoard(log_dir='./fitted_models/logs', histogram_freq=0, write_images=True)
+
+    #write new directory to store tensorboard logs in a way which makes it easy for us to see later on!
+    tensorboard_dir = "./fitted_models/tb_logs/" + output_base + "_tl"
+    os.system("mkdir " + tensorboard_dir)
+    tensorboard_tl = TensorBoard(log_dir=tensorboard_dir, histogram_freq=0, write_images=True)
+
     reducelronplateau = ReduceLROnPlateau(monitor='val_mean_L1_distance', factor=0.5, patience=5, verbose=1, mode='min', epsilon=0.01, cooldown=0, min_lr=0.0000001)
     history_tl = model.fit_generator(
         train_generator,
@@ -481,13 +491,15 @@ def train(args):
         steps_per_epoch=nb_train_samples // batch_size,
         validation_data=validation_generator,
         validation_steps=nb_val_samples // batch_size,
-        callbacks=[csv_logger_tl,checkpointer_tl, tensorboard, reducelronplateau, early_stopping_tl],
+        callbacks=[csv_logger_tl,checkpointer_tl, tensorboard_tl, reducelronplateau, early_stopping_tl],
         class_weight='auto')  # Amin: what is this class_weight?
 
     output_name = output_base+"_tl.model"
     model.save("fitted_models/" + output_name)
 
     #code.interact(local=locals())
+    #works for getting train_preds, but takes forever!
+    #train_preds = model.predict_generator(generator=train_generator, steps=128, verbose=1)
 
     print("Save transfer learning plots ...")
     try:
@@ -507,13 +519,18 @@ def train(args):
     weights_ft = output_base+"_ft.hdf5"
     checkpointer_ft = ModelCheckpoint(filepath='fitted_models/checkpoints/'+weights_ft, verbose=1, monitor='val_mean_L1_distance', save_best_only=True)
     early_stopping_ft = EarlyStopping(monitor='val_mean_L1_distance', patience=6, mode = 'min', verbose=1)
+
+    tensorboard_dir = "./fitted_models/tb_logs/" + output_base + "_ft"
+    os.system("mkdir " + tensorboard_dir)
+    tensorboard_ft = TensorBoard(log_dir=tensorboard_dir, histogram_freq=0, write_images=True)
+
     history_ft = model.fit_generator(
         train_generator,
         epochs=nb_epoch,
         steps_per_epoch=nb_train_samples / batch_size,
         validation_data=validation_generator,
         validation_steps=nb_val_samples / batch_size,
-        callbacks=[csv_logger_ft,checkpointer_ft,tensorboard, reducelronplateau, early_stopping_ft],
+        callbacks=[csv_logger_ft,checkpointer_ft,tensorboard_ft, reducelronplateau, early_stopping_ft],
         class_weight='auto')
 
     output_name = output_base+"_ft.model"
