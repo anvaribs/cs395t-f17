@@ -317,7 +317,7 @@ def train(args):
 
     LAMBDA = int(args.lambda_val)
 
-    if (int(args.decay) != -1):
+    if (float(args.decay) != -1):
         decay = float(args.decay)
     else:
         print('adaptive learning rate decaying ...')
