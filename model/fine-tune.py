@@ -474,6 +474,7 @@ def train(args):
     checkpointer_tl = ModelCheckpoint(filepath='fitted_models/checkpoints/'+weights_tl, verbose=1, monitor='val_mean_L1_distance', save_best_only=True, mode = 'min')
     early_stopping_tl = EarlyStopping(monitor='val_mean_L1_distance', patience=4, mode = 'min', verbose=1)
 
+    #write new directory to store tensorboard logs in a way which makes it easy for us to see later on!
     tensorboard_dir = "./fitted_models/tb_logs/" + output_base + "_tl"
     os.system("mkdir " + tensorboard_dir)
     tensorboard_tl = TensorBoard(log_dir=tensorboard_dir, histogram_freq=0, write_images=True)
@@ -492,9 +493,8 @@ def train(args):
     model.save("fitted_models/" + output_name)
 
     #code.interact(local=locals())
-     #works for getting train_preds, but takes forever!
+    #works for getting train_preds, but takes forever!
     #train_preds = model.predict_generator(generator=train_generator, steps=128, verbose=1)
-    #np.where( train_preds[0] == 1)[0][0]
 
     print("Save transfer learning plots ...")
     try:
