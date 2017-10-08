@@ -119,23 +119,23 @@ def ultimate_loss_function(y_true, y_pred):
 
 def ultimate_loss_function_100(y_true, y_pred):
     return (K.categorical_crossentropy(y_true, y_pred) +
-            K.cast_to_floatx(1.0)*K.mean(K.abs(y_pred - y_true), axis=-1))
+            K.cast_to_floatx(100.0)*K.mean(K.abs(y_pred - y_true), axis=-1))
 
 def ultimate_loss_function_200(y_true, y_pred):
     return (K.categorical_crossentropy(y_true, y_pred) +
-            K.cast_to_floatx(1.0)*K.mean(K.abs(y_pred - y_true), axis=-1))
+            K.cast_to_floatx(200.0)*K.mean(K.abs(y_pred - y_true), axis=-1))
 
 def ultimate_loss_function_500(y_true, y_pred):
     return (K.categorical_crossentropy(y_true, y_pred) +
-            K.cast_to_floatx(1.0)*K.mean(K.abs(y_pred - y_true), axis=-1))
+            K.cast_to_floatx(500.0)*K.mean(K.abs(y_pred - y_true), axis=-1))
 
 def ultimate_loss_function_1000(y_true, y_pred):
     return (K.categorical_crossentropy(y_true, y_pred) +
-            K.cast_to_floatx(1.0)*K.mean(K.abs(y_pred - y_true), axis=-1))
+            K.cast_to_floatx(1000.0)*K.mean(K.abs(y_pred - y_true), axis=-1))
 
 def ultimate_loss_function_5000(y_true, y_pred):
     return (K.categorical_crossentropy(y_true, y_pred) +
-            K.cast_to_floatx(1.0)*K.mean(K.abs(y_pred - y_true), axis=-1))
+            K.cast_to_floatx(5000.0)*K.mean(K.abs(y_pred - y_true), axis=-1))
 
 
 
