@@ -708,7 +708,7 @@ def predict_all(model_name, data_set):
     # read training data
     relative_path_txt = '../data/yearbook/yearbook_' + data_set + '.txt'
     lines = [line.rstrip('\n') for line in open(relative_path_txt)]
-    n_exm = 10# np.shape(lines)[0]  # modify this number if you want to make predictions on a subset of data
+    n_exm = np.shape(lines)[0]  # modify this number if you want to make predictions on a subset of data
     y_pred = np.zeros(n_exm, dtype='int32')
     y_true = np.zeros(n_exm, dtype='int32')
     print("making predictions...")
@@ -733,8 +733,7 @@ def predict_all(model_name, data_set):
 
 def plot_confusion_matrix(y_true, y_pred, normalize=False,):
     """
-    This function prints and plots the confusion matrix.
-    Normalization can be applied by setting `normalize=True`.
+        please use the conf_matrix.ipynb under plot directory instead
     """
     cmap=plt.cm.YlOrRd
     normalize=False
@@ -795,6 +794,9 @@ def plot_confusion_matrix(y_true, y_pred, normalize=False,):
 
 
 def conf_matrix(model_name, data_set):
+    """
+        please use the conf_matrix.ipynb under plot directory instead
+    """
     y_pred, y_true = predict_all(model_name, data_set)
     plot_confusion_matrix(y_true, y_pred, normalize=False)
 
