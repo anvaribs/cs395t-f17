@@ -138,18 +138,19 @@ https://coderwall.com/p/ohk6cg/remote-access-to-ipython-notebooks-via-ssh
 
 
 ## How ro predict based on a model and a dataset (train or valid)
-run the following from model directory:
+1) run the following from model directory:
 
-fine-tune.py --make_prediction="yes" --pred_dataset="train" --pred_model = "m_2017-10-06_02:10_inceptionv3_categorical_crossentropy_adam_lr0.001_epochs50_regnone_decay0.0_ft.model"
+fine-tune.py --make_prediction="yes" --pred_dataset="train" --pred_model ="m_2017-10-06_02:10_inceptionv3_categorical_crossentropy_adam_lr0.001_epochs50_regnone_decay0.0_ft.model"
 Using TensorFlow backend.
 
-
-note:
+NOTE:
+- what this does is that it stores y_pred_train.csv and y_true_train.csv in the plot directory. if you run it for test it will produce the corresponding predictions
 - the model should be in fitted_models
 - depending on the dataset you are interested in, you should choose train or valid
 - the make_conf_mat should be yes if you want to make predictions
+- if you want to store the predictions for multiple models put the current predictions in another folder and rename them cause they will be overwriteen
 
 
-this command prododuces predictions and stored the predictions and true labels. The next step is to use the model/plot/conf_matrix.ipynb
+2) The next step is to use the model/plot/conf_matrix.ipynb for post processing
 
 once you are in the ipython, you need to specify the dataset of interest, if the predictions for that dataset are stored, it will read it and find confusion matrix and plot it. It will also produce min, mean, max L1 
