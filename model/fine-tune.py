@@ -708,7 +708,7 @@ def predict_all(model_name, data_set):
     # read training data
     relative_path_txt = '../data/yearbook/yearbook_' + data_set + '.txt'
     lines = [line.rstrip('\n') for line in open(relative_path_txt)]
-    n_exm = np.shape(lines)[0]  # modify this number if you want to make predictions on a subset of data
+    n_exm = 10# np.shape(lines)[0]  # modify this number if you want to make predictions on a subset of data
     y_pred = np.zeros(n_exm, dtype='int32')
     y_true = np.zeros(n_exm, dtype='int32')
     print("making predictions...")
@@ -719,6 +719,14 @@ def predict_all(model_name, data_set):
         img = Image.open(full_path_img)  # we need to read the image using PIL.Image
         y_pred[i] = np.argmax(predict_img(model, img, target_size))
         y_true[i] = inverse_mapping[label]
+
+    y_pred_path = "./plots/y_pred_" + data_set + ".csv"
+    y_true_path = "./plots/y_true_" + data_set + ".csv"
+    np.savetxt(y_pred_path, y_pred, delimiter=",", fmt="%d")
+    np.savetxt(y_true_path, y_true, delimiter=",", fmt="%d")
+    print("normalized l1 distance between y_true and y_pred:")
+    print (np.linalg.norm((y_true - y_pred), ord=1)/len(y_true))
+
     return y_pred, y_true
 
 
@@ -788,13 +796,8 @@ def plot_confusion_matrix(y_true, y_pred, normalize=False,):
 
 def conf_matrix(model_name, data_set):
     y_pred, y_true = predict_all(model_name, data_set)
-    y_pred_path = "./plots/y_pred_" + data_set + ".csv"
-    y_true_path = "./plots/y_true_" + data_set + ".csv"
-    np.savetxt(y_pred_path, y_pred, delimiter=",", fmt="%d")
-    np.savetxt(y_true_path, y_true, delimiter=",", fmt="%d")
     plot_confusion_matrix(y_true, y_pred, normalize=False)
-    print("normalized l1 distance between y_true and y_pred:")
-    print (np.linalg.norm((y_true - y_pred), ord=1)/len(y_true))
+
 
 if __name__ == "__main__":
     # SAMPLE CALLs
@@ -819,9 +822,9 @@ if __name__ == "__main__":
     a.add_argument("--lambda_val", default=1)
     a.add_argument("--output_model_file", default="inceptionv3-ft.model")
     a.add_argument("--plot", action="store_true")
-    a.add_argument("--make_conf_mat", default='no')
-    a.add_argument("--conf_mat_model", default= "m_2017-10-06_02:10_inceptionv3_categorical_crossentropy_adam_lr0.001_epochs50_regnone_decay0.0_ft.model")
-    a.add_argument("--conf_mat_dataset", default= "train")
+    a.add_argument("--make_prediction", default='no')
+    a.add_argument("--pred_model", default= "m_2017-10-06_02:10_inceptionv3_categorical_crossentropy_adam_lr0.001_epochs50_regnone_decay0.0_ft.model")
+    a.add_argument("--pred_dataset", default= "train")
 
     args = a.parse_args()
 
@@ -836,9 +839,8 @@ if __name__ == "__main__":
     # Found 22840 images belonging to 2 classes.
     # Found 5009 images belonging to 2 classes.
 
-    if args.make_conf_mat == "yes":
-        conf_matrix(model_name = args.conf_mat_model, data_set = args.conf_mat_dataset)
-
+    if args.make_prediction == "yes":
+        predict_all(model_name = args.pred_model, data_set = args.pred_dataset)
     else:
         model = train(args)
 

@@ -18,8 +18,8 @@ import code
 target_size = (299, 299) #fixed size for InceptionV3 architecture 
 
 
-def predict(model, img, target_size):
-  """Run model prediction on image
+def predict_img(model, img, target_size):
+  """Run model prediction on all the images in a dataset
   Args:
     model: keras model
     img: PIL format image
