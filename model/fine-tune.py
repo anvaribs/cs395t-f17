@@ -15,7 +15,7 @@ import keras
 from keras.applications import vgg16, vgg19, inception_v3, xception, resnet50, imagenet_utils
 from keras.models import Model
 from keras.models import load_model
-from keras.layers import Dense, GlobalAveragePooling2D, Flatten
+from keras.layers import Dense, GlobalAveragePooling2D, Flatten, GlobalMaxPooling2D
 from keras.preprocessing.image import ImageDataGenerator
 from keras import optimizers
 from keras.optimizers import SGD
@@ -270,7 +270,7 @@ def add_new_last_layer(base_model, nb_classes, FC_SIZE, regularizer, reg_rate):
 
     else:
         # Classification block
-        x = Flatten(name='flatten')(x)
+        x = GlobalMaxPooling2D()(x)
         x = Dense(FC_SIZE, activation='relu', name='fc1')(x)
         x = Dense(FC_SIZE, activation='relu', name='fc2')(x)
         predictions = Dense(nb_classes, activation='softmax', name='predictions')(x)
