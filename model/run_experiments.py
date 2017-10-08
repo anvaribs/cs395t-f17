@@ -16,6 +16,7 @@ if __name__ == "__main__":
     
     #open conf.csv and call fine-tune.py with each configuration
     runs = pd.read_csv(args.conf_file)
+
     for index, row in runs.iterrows():
         print("On: ",row)
         #print(row.architecture)
