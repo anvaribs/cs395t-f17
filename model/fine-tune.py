@@ -146,6 +146,11 @@ keras.losses.categorical_crossentropy_mean_absoulute_error_1 = categorical_cross
 keras.losses.categorical_crossentropy_mean_absoulute_error_01 = categorical_crossentropy_mean_absoulute_error_01
 keras.losses.categorical_crossentropy_mean_absoulute_error_001 = categorical_crossentropy_mean_absoulute_error_001
 keras.losses.ultimate_loss_function = ultimate_loss_function
+keras.losses.ultimate_loss_function_100 = ultimate_loss_function_100
+keras.losses.ultimate_loss_function_200 = ultimate_loss_function_200
+keras.losses.ultimate_loss_function_500 = ultimate_loss_function_500
+keras.losses.ultimate_loss_function_1000 = ultimate_loss_function_1000
+keras.losses.ultimate_loss_function_5000 = ultimate_loss_function_5000
 
 
 
