@@ -117,6 +117,27 @@ def ultimate_loss_function(y_true, y_pred):
     return (K.categorical_crossentropy(y_true, y_pred) +
             K.cast_to_floatx(1.0)*K.mean(K.abs(y_pred - y_true), axis=-1))
 
+def ultimate_loss_function_100(y_true, y_pred):
+    return (K.categorical_crossentropy(y_true, y_pred) +
+            K.cast_to_floatx(100.0)*K.mean(K.abs(y_pred - y_true), axis=-1))
+
+def ultimate_loss_function_200(y_true, y_pred):
+    return (K.categorical_crossentropy(y_true, y_pred) +
+            K.cast_to_floatx(200.0)*K.mean(K.abs(y_pred - y_true), axis=-1))
+
+def ultimate_loss_function_500(y_true, y_pred):
+    return (K.categorical_crossentropy(y_true, y_pred) +
+            K.cast_to_floatx(500.0)*K.mean(K.abs(y_pred - y_true), axis=-1))
+
+def ultimate_loss_function_1000(y_true, y_pred):
+    return (K.categorical_crossentropy(y_true, y_pred) +
+            K.cast_to_floatx(1000.0)*K.mean(K.abs(y_pred - y_true), axis=-1))
+
+def ultimate_loss_function_5000(y_true, y_pred):
+    return (K.categorical_crossentropy(y_true, y_pred) +
+            K.cast_to_floatx(5000.0)*K.mean(K.abs(y_pred - y_true), axis=-1))
+
+
 
 keras.losses.categorical_crossentropy_mean_squared_error_1 = categorical_crossentropy_mean_squared_error_1
 keras.losses.categorical_crossentropy_mean_squared_error_01 = categorical_crossentropy_mean_squared_error_01
@@ -674,6 +695,7 @@ def predict_all(model_name, data_set, target_size):
     ARGS:
         model_name: the model that we want to use for prediction 
         data_set: the dataset on which the prediction is made
+        target_size: the input size of the corresponding model so that imgags can be scaled accordingly
     Returns:
         y_pred: the predicted labels for each example
         y_true: true labels for each example
