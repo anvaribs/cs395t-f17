@@ -652,7 +652,8 @@ def plot_training(modelname,model,history):
     #this causes conflicts with python 3.6 (it was built on 2.7)
     #plot_model(model, to_file="fitted_models/"+modelname + '_keras.png')
 
-def predict_all(model_name, data_set):
+def predict_all(model_name, data_set, target_size):
+
     """uses the model that has been passed and makes predictions on the data_set
     ARGS:
         model_name: the model that we want to use for prediction 
@@ -693,7 +694,7 @@ def predict_all(model_name, data_set):
 
 
 
-    target_size = (299, 299) #fixed size for InceptionV3 architecture 
+     
     # modelname = "inceptionv3_categorical_crossentropy_rmsprop_lr0.0001_epochs2_regnone_tl.model"
     modelname = model_name
     keras.metrics.min_L1_distance= min_L1_distance
@@ -829,6 +830,7 @@ if __name__ == "__main__":
     a.add_argument("--make_prediction", default='no')
     a.add_argument("--pred_model", default= "m_2017-10-06_02:10_inceptionv3_categorical_crossentropy_adam_lr0.001_epochs50_regnone_decay0.0_ft.model")
     a.add_argument("--pred_dataset", default= "train")
+    a.add_argument("--pred_target_size", nargs='+', type=int)
 
     args = a.parse_args()
 
@@ -844,7 +846,8 @@ if __name__ == "__main__":
     # Found 5009 images belonging to 2 classes.
 
     if args.make_prediction == "yes":
-        predict_all(model_name = args.pred_model, data_set = args.pred_dataset)
+        target_size = tuple(args.pred_target_size)
+        predict_all(model_name = args.pred_model, data_set = args.pred_dataset, target_size = target_size)
     else:
         model = train(args)
 
