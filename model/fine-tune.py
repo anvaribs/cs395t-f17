@@ -653,11 +653,13 @@ def plot_training(modelname,model,history):
     #plot_model(model, to_file="fitted_models/"+modelname + '_keras.png')
 
 def predict_all(model_name, data_set):
-    """Makes predictions on input images and calls the conf_matrix
+    """uses the model that has been passed and makes predictions on the data_set
     ARGS:
-
-
+        model_name: the model that we want to use for prediction 
+        data_set: the dataset on which the prediction is made
     Returns:
+        y_pred: the predicted labels for each example
+        y_true: true labels for each example
     """
     mapping = {
     0: '1905', 1: '1906', 2: '1908', 3: '1909', 4: '1910', 5: '1911', 6: '1912', 7: '1913', 8: '1914', 9: '1915',
