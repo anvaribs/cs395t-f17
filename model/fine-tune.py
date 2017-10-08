@@ -12,7 +12,7 @@ from PIL import Image
 # from keras.applications.inception_v3 import InceptionV3, preprocess_input
 # from keras.applications.vgg16 import VGG16
 import keras
-from keras.applications import vgg16, vgg19, inception_v3, xception, resnet50
+from keras.applications import vgg16, vgg19, inception_v3, xception, resnet50, imagenet_utils
 from keras.models import Model
 from keras.models import load_model
 from keras.layers import Dense, GlobalAveragePooling2D
@@ -232,37 +232,50 @@ def add_new_last_layer(base_model, nb_classes, FC_SIZE, regularizer, reg_rate):
     Returns:
       new keras model with last layer
     """
-    inlayer = base_model.input
-    x = base_model.output
+    if base_model.name != 'vgg16':
+        inlayer = base_model.input
+        x = base_model.output
 
-    # code.interact(local=locals())
-    # print("current output Lastlayer x.shape: ")
-    # print(x)				   #Tensor("mixed10/concat:0", shape=(?, ?, ?, 2048), dtype=float32)
-    # print(x.shape)			   #(?, ?, ?, 2048)
+        # code.interact(local=locals())
+        # print("current output Lastlayer x.shape: ")
+        # print(x)				   #Tensor("mixed10/concat:0", shape=(?, ?, ?, 2048), dtype=float32)
+        # print(x.shape)			   #(?, ?, ?, 2048)
 
-    x = GlobalAveragePooling2D()(x)  # GlobalAveragePooling2D converts the MxNxC tensor output into a 1xC tensor where C is the # of channels.
-    x = Dense(FC_SIZE, activation='relu')(x)  # new FC layer, random init  a fully-connected Dense layer of size 1024
-    # print("after pooling, dense Lastlayer x.shape: ")
-    # print(x)				   #Tensor("dense_1/Relu:0", shape=(?, 1024), dtype=float32)
-    # print(x.shape)                           #(?, 1024)
+        x = GlobalAveragePooling2D()(x)  # GlobalAveragePooling2D converts the MxNxC tensor output into a 1xC tensor where C is the # of channels.
+        x = Dense(FC_SIZE, activation='relu')(x)  # new FC layer, random init  a fully-connected Dense layer of size 1024
+        # print("after pooling, dense Lastlayer x.shape: ")
+        # print(x)				   #Tensor("dense_1/Relu:0", shape=(?, 1024), dtype=float32)
+        # print(x.shape)                           #(?, 1024)
 
-    # new softmax layer on the output to squeeze the values between [0,1]
-    if regularizer == "none":
-        predictions = Dense(nb_classes, activation='softmax')(x)
+        # new softmax layer on the output to squeeze the values between [0,1]
+        if regularizer == "none":
+            predictions = Dense(nb_classes, activation='softmax')(x)
+        else:
+            if regularizer == "L1":
+                print("using L1 regularization")
+                #see https://keras.io/regularizers/
+                predictions = Dense(nb_classes, activation='softmax', kernel_regularizer=regularizers.l1(reg_rate) )(x)
+
+        # print("predictions.shape: ")
+        print("PREDICTIONS need to be in [0,1].  nb_classes: ", nb_classes, " should be the size of your last layer")
+        print(predictions)
+        print(predictions.shape)  # (?, 0)
+
+        model = Model(inputs=base_model.input,
+                      outputs=predictions)  # UserWarning: Update your `Model` call to the Keras 2 API: `Model(inputs=Tensor("in..., outputs=Tensor("de...)`
+        # fixed via:  https://github.com/fchollet/keras/issues/7602  , change input= to inputs= , output=  to outputs=
+
     else:
-        if regularizer == "L1":
-            print("using L1 regularization")
-            #see https://keras.io/regularizers/
-            predictions = Dense(nb_classes, activation='softmax', kernel_regularizer=regularizers.l1(reg_rate) )(x)
-        
-    # print("predictions.shape: ")
-    print("PREDICTIONS need to be in [0,1].  nb_classes: ", nb_classes, " should be the size of your last layer")
-    print(predictions)
-    print(predictions.shape)  # (?, 0)
+        # Classification block
+        x = Flatten(name='flatten')(x)
+        x = Dense(FC_SIZE, activation='relu', name='fc1')(x)
+        x = Dense(FC_SIZE, activation='relu', name='fc2')(x)
+        predictions = Dense(nb_classes, activation='softmax', name='predictions')(x)
 
-    model = Model(inputs=base_model.input,
-                  outputs=predictions)  # UserWarning: Update your `Model` call to the Keras 2 API: `Model(inputs=Tensor("in..., outputs=Tensor("de...)`
-    # fixed via:  https://github.com/fchollet/keras/issues/7602  , change input= to inputs= , output=  to outputs=
+        model = Model(inputs=base_model.input,
+                      outputs=predictions)
+
+
     return model
 
 
@@ -386,13 +399,13 @@ def train(args):
 
     if args.model_name == "VGG16":
         IM_WIDTH, IM_HEIGHT = 224, 224
-        FC_SIZE = 256
+        FC_SIZE = 4096
         LAYER_FROM_FREEZE = 'block5_conv1'
         NB_LAYERS_TO_FREEZE = None
         # setup model
         base_model = vgg16.VGG16(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
         # print(base_model.summary())
-        preprocess_input = vgg16.preprocess_input
+        preprocess_input = imagenet_utils.preprocess_input
 
 
     if args.model_name == "VGG19":
@@ -403,7 +416,7 @@ def train(args):
         # setup model
         base_model = vgg19.VGG19(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
         # print(base_model.summary())
-        preprocess_input = vgg19.preprocess_input
+        preprocess_input = imagenet_utils.preprocess_input
 
 
     if args.model_name == "Xception":
@@ -847,7 +860,7 @@ if __name__ == "__main__":
     a.add_argument("--reg_rate", default=0)
     a.add_argument("--decay", default='-1')
     a.add_argument("--lambda_val", default=1)
-    a.add_argument("--output_model_file", default="inceptionv3-ft.model")
+    a.add_argument("--output_model_file", default="VGG16")
     a.add_argument("--plot", action="store_true")
     a.add_argument("--make_prediction", default='no')
     a.add_argument("--pred_model", default= "m_2017-10-06_02:10_inceptionv3_categorical_crossentropy_adam_lr0.001_epochs50_regnone_decay0.0_ft.model")
