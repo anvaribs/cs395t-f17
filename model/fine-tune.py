@@ -275,9 +275,8 @@ def add_new_last_layer(base_model, nb_classes, FC_SIZE, regularizer, reg_rate):
 
     else:
         # Classification block
-        x = GlobalMaxPooling2D()(x)
+        x = GlobalAveragePooling2D()(x)
         x = Dense(FC_SIZE, activation='relu', name='fc1')(x)
-        x = Dense(FC_SIZE, activation='relu', name='fc2')(x)
         predictions = Dense(nb_classes, activation='softmax', name='predictions')(x)
 
         model = Model(inputs=base_model.input,
@@ -407,7 +406,7 @@ def train(args):
 
     if args.model_name == "VGG16":
         IM_WIDTH, IM_HEIGHT = 224, 224
-        FC_SIZE = 4096
+        FC_SIZE = 256
         LAYER_FROM_FREEZE = 'block5_conv1'
         NB_LAYERS_TO_FREEZE = None
         # setup model
