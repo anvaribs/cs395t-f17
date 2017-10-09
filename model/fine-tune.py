@@ -26,7 +26,6 @@ import keras.losses
 
 import keras.backend as K
 from keras.callbacks import Callback, CSVLogger, ModelCheckpoint, EarlyStopping, TensorBoard, ReduceLROnPlateau
-from predict import predict_img
 
 import keras.backend as K 
 
@@ -39,8 +38,21 @@ import code  # https://www.digitalocean.com/community/tutorials/how-to-debug-pyt
 import datetime
 import traceback
 import pdb
+
 from sklearn.metrics import confusion_matrix
 import itertools
+from numpy import genfromtxt
+import matplotlib
+from keras.utils.np_utils import to_categorical
+
+import requests
+from io import BytesIO    
+from skimage.io import imread
+
+
+from keras.preprocessing import image
+from keras.models import load_model
+
 
 
 #default for inceptionv3
@@ -691,10 +703,30 @@ def plot_training(modelname,model,history):
     plt.savefig("fitted_models/"+modelname+"_train_val_mean_L1.png")
     plt.close()
 
+
     #this causes conflicts with python 3.6 (it was built on 2.7)
     #plot_model(model, to_file="fitted_models/"+modelname + '_keras.png')
 
-def predict_all(model_name, data_set, target_size):
+def predict_img(model, img, target_size, preprocess_input):
+    """Run model prediction on a single image
+    Args:
+    model: keras model
+    img: PIL format image
+    target_size: (w,h) tuple
+    Returns:
+    list of predicted labels and their probabilities
+    """
+    if img.size != target_size:
+        img = img.resize(target_size)
+
+    x = image.img_to_array(img)
+    x = np.expand_dims(x, axis=0)
+    x = preprocess_input(x)
+    preds = model.predict(x)
+    return preds[0]
+
+
+def predict_all(model_name, data_set):
 
     """uses the model that has been passed and makes predictions on the data_set
     ARGS:
@@ -735,9 +767,6 @@ def predict_all(model_name, data_set, target_size):
     '2010'  :   100 ,   '2011'  :   101 ,   '2012'  :   102 ,   '2013'  :   103 }                                                                                
 
 
-
-
-     
     # modelname = "inceptionv3_categorical_crossentropy_rmsprop_lr0.0001_epochs2_regnone_tl.model"
     modelname = model_name
     keras.metrics.min_L1_distance= min_L1_distance
@@ -746,6 +775,29 @@ def predict_all(model_name, data_set, target_size):
     print("loading model ...")
     model = load_model("./fitted_models/" + model_name)
     print("model loaded")
+
+# Read target_size and preprocess_input 
+    if "inceptionv3" in model_name:
+        IM_WIDTH, IM_HEIGHT = 299, 299 
+        preprocess_input = inception_v3.preprocess_input
+
+    if "VGG16" in model_name:
+        IM_WIDTH, IM_HEIGHT = 224, 224
+        preprocess_input = imagenet_utils.preprocess_input
+
+    if "VGG19" in model_name:
+        IM_WIDTH, IM_HEIGHT = 224, 224
+        preprocess_input = imagenet_utils.preprocess_input
+
+    if "Xception" in model_name:
+        IM_WIDTH, IM_HEIGHT = 299, 299
+        preprocess_input = xception.preprocess_input
+
+    if "ResNet50" in model_name:
+        IM_WIDTH, IM_HEIGHT = 224, 224
+        preprocess_input = resnet50.preprocess_input
+
+
     # this is the address on microdeep
     # glob_path = '/home/farzan15/cs395t-f17/data/yearbook/A/A/*'
     # filepaths = glob.glob(glob_path)
@@ -763,7 +815,7 @@ def predict_all(model_name, data_set, target_size):
         full_path_img = relative_path_img1 + relative_path_img2
         # img2 = imread(full_path)
         img = Image.open(full_path_img)  # we need to read the image using PIL.Image
-        y_pred[i] = np.argmax(predict_img(model, img, target_size))
+        y_pred[i] = np.argmax(predict_img(model, img, (IM_HEIGHT, IM_WIDTH), preprocess_input))
         y_true[i] = inverse_mapping[label]
 
     y_pred_path = "./plots/y_pred_" + data_set + ".csv"
@@ -777,74 +829,136 @@ def predict_all(model_name, data_set, target_size):
 
 
 
-def plot_confusion_matrix(y_true, y_pred, normalize=False,):
+def plot_confusion_matrix(y_true, y_pred,  model_name, normalize=False, data_set='train'):
     """
         please use the conf_matrix.ipynb under plot directory instead
     """
+
+    ################### CHOOSE THE DATASET THAT YOU WANT TO USE ############
+    data_set = data_set # specify the dataset for which you want conf matrix, either valid or train
+    ########################################################################
+
+
+    y_pred_path = "./plots/y_pred_" + data_set + ".csv"
+    y_true_path = "./plots/y_true_" + data_set + ".csv"
+
+    y_true = genfromtxt(y_true_path, delimiter=',', dtype=int)
+    y_pred = genfromtxt(y_pred_path, delimiter=',', dtype=int)
+
+
+    mapping = {
+    0: 1905, 1: 1906, 2: 1908, 3: 1909, 4: 1910, 5: 1911, 6: 1912, 7: 1913, 8: 1914, 9: 1915,
+    10: 1916, 11: 1919, 12: 1922, 13: 1923, 14: 1924, 15: 1925, 16: 1926, 17: 1927, 18: 1928,
+    19: 1929, 20: 1930, 21: 1931, 22: 1932, 23: 1933, 24: 1934, 25: 1935, 26: 1936, 27: 1937,
+    28: 1938, 29: 1939, 30: 1940, 31: 1941, 32: 1942, 33: 1943, 34: 1944, 35: 1945, 36: 1946,
+    37: 1947, 38: 1948, 39: 1949, 40: 1950, 41: 1951, 42: 1952, 43: 1953, 44: 1954, 45: 1955,
+    46: 1956, 47: 1957, 48: 1958, 49: 1959, 50: 1960, 51: 1961, 52: 1962, 53: 1963, 54: 1964,
+    55: 1965, 56: 1966, 57: 1967, 58: 1968, 59: 1969, 60: 1970, 61: 1971, 62: 1972, 63: 1973,
+    64: 1974, 65: 1975, 66: 1976, 67: 1977, 68: 1978, 69: 1979, 70: 1980, 71: 1981, 72: 1982,
+    73: 1983, 74: 1984, 75: 1985, 76: 1986, 77: 1987, 78: 1988, 79: 1989, 80: 1990, 81: 1991,
+    82: 1992, 83: 1993, 84: 1994, 85: 1995, 86: 1996, 87: 1997, 88: 1998, 89: 1999, 90: 2000,
+    91: 2001, 92: 2002, 93: 2003, 94: 2004, 95: 2005, 96: 2006, 97: 2007, 98: 2008, 99: 2009,
+    100: 2010, 101: 2011, 102: 2012, 103: 2013}
+
+
+    inverse_mapping = {
+    1905  :   0   ,   1906  :   1   ,   1908  :   2   ,   1909  :   3   ,   1910  :   4   ,   1911  :   5   ,   1912  :   6   ,   1913  :   7   ,   1914  :   8   ,  1915 : 9,
+    1916  :   10  ,   1919  :   11  ,   1922  :   12  ,   1923  :   13  ,   1924  :   14  ,   1925  :   15  ,   1926  :   16  ,   1927  :   17  ,   1928  :   18  ,
+    1929  :   19  ,   1930  :   20  ,   1931  :   21  ,   1932  :   22  ,   1933  :   23  ,   1934  :   24  ,   1935  :   25  ,   1936  :   26  ,   1937  :   27  ,
+    1938  :   28  ,   1939  :   29  ,   1940  :   30  ,   1941  :   31  ,   1942  :   32  ,   1943  :   33  ,   1944  :   34  ,   1945  :   35  ,   1946  :   36  ,
+    1947  :   37  ,   1948  :   38  ,   1949  :   39  ,   1950  :   40  ,   1951  :   41  ,   1952  :   42  ,   1953  :   43  ,   1954  :   44  ,   1955  :   45  ,
+    1956  :   46  ,   1957  :   47  ,   1958  :   48  ,   1959  :   49  ,   1960  :   50  ,   1961  :   51  ,   1962  :   52  ,   1963  :   53  ,   1964  :   54  ,
+    1965  :   55  ,   1966  :   56  ,   1967  :   57  ,   1968  :   58  ,   1969  :   59  ,   1970  :   60  ,   1971  :   61  ,   1972  :   62  ,   1973  :   63  ,
+    1974  :   64  ,   1975  :   65  ,   1976  :   66  ,   1977  :   67  ,   1978  :   68  ,   1979  :   69  ,   1980  :   70  ,   1981  :   71  ,   1982  :   72  ,
+    1983  :   73  ,   1984  :   74  ,   1985  :   75  ,   1986  :   76  ,   1987  :   77  ,   1988  :   78  ,   1989  :   79  ,   1990  :   80  ,   1991  :   81  ,
+    1992  :   82  ,   1993  :   83  ,   1994  :   84  ,   1995  :   85  ,   1996  :   86  ,   1997  :   87  ,   1998  :   88  ,   1999  :   89  ,   2000  :   90  ,
+    2001  :   91  ,   2002  :   92  ,   2003  :   93  ,   2004  :   94  ,   2005  :   95  ,   2006  :   96  ,   2007  :   97  ,   2008  :   98  ,   2009  :   99  ,
+    2010  :   100 ,   2011  :   101 ,   2012  :   102 ,   2013  :   103 }    
+
+    y_true_years = np.zeros(len(y_true))
+    y_pred_years = np.zeros(len(y_pred))
+    for i, y in enumerate(y_true):
+        y_true_years[i] = mapping[y]
+    for i, y in enumerate(y_pred):    
+        y_pred_years[i] = mapping[y]
+
+    # c_mat2 = genfromtxt(‘conf_matrix.csv’, delimiter=‘,’)
+    c_mat = confusion_matrix(y_true_years, y_pred_years, labels = list(inverse_mapping.keys()))
+    import matplotlib.pyplot as plt
+        
+    print("mean l1 distance between y_true_years and y_pred_years:")
+    print (np.linalg.norm((y_true_years - y_pred_years), ord=1)/len(y_true))
+    print("max l1 distance between y_true_years and y_pred_years:")
+    print (np.max(np.abs(y_true_years - y_pred_years)))
+    print("min l1 distance between y_true_years and y_pred_years:")
+    print (np.min(np.abs(y_true_years - y_pred_years)))
+
+
     cmap=plt.cm.YlOrRd
     normalize=False
-    
-    mapping = {0: '1905', 1: '1906', 2: '1908', 3: '1909', 4: '1910', 5: '1911', 6: '1912', 7: '1913', 8: '1914', 9: '1915',
-               10: '1916', 11: '1919', 12: '1922', 13: '1923', 14: '1924', 15: '1925', 16: '1926', 17: '1927', 18: '1928',
-               19: '1929', 20: '1930', 21: '1931', 22: '1932', 23: '1933', 24: '1934', 25: '1935', 26: '1936', 27: '1937',
-               28: '1938', 29: '1939', 30: '1940', 31: '1941', 32: '1942', 33: '1943', 34: '1944', 35: '1945', 36: '1946',
-               37: '1947', 38: '1948', 39: '1949', 40: '1950', 41: '1951', 42: '1952', 43: '1953', 44: '1954', 45: '1955',
-               46: '1956', 47: '1957', 48: '1958', 49: '1959', 50: '1960', 51: '1961', 52: '1962', 53: '1963', 54: '1964',
-               55: '1965', 56: '1966', 57: '1967', 58: '1968', 59: '1969', 60: '1970', 61: '1971', 62: '1972', 63: '1973',
-               64: '1974', 65: '1975', 66: '1976', 67: '1977', 68: '1978', 69: '1979', 70: '1980', 71: '1981', 72: '1982',
-               73: '1983', 74: '1984', 75: '1985', 76: '1986', 77: '1987', 78: '1988', 79: '1989', 80: '1990', 81: '1991',
-               82: '1992', 83: '1993', 84: '1994', 85: '1995', 86: '1996', 87: '1997', 88: '1998', 89: '1999', 90: '2000',
-               91: '2001', 92: '2002', 93: '2003', 94: '2004', 95: '2005', 96: '2006', 97: '2007', 98: '2008', 99: '2009',
-               100: '2010', 101: '2011', 102: '2012', 103: '2013'}
+    title='Confusion matrix'
 
-    c_mat = confusion_matrix(y_true, y_pred)
-
-    # conf_matrix_pdf_path = "./plots/conf_matrix_pdf_" + data_set + ".pdf"
-    # plt.savefig(conf_matrix_pdf_path)
-
-    # conf_matrix_path = "./plots/conf_matrix_" + data_set + ".csv"
-    # np.savetxt(conf_matrix_path, c_mat, delimiter=",", fmt="%d")
-   
-    print("Confusion matrix sum:")
-    print(np.sum(np.sum(c_mat,1)))
-    print("plotting conf matrix ...")
-    classes_year = mapping.values()
-    classes = np.fromiter(iter(classes_year), dtype=int) # turn into numpy array
+    classes_val = mapping.values()
+    classes = np.fromiter(iter(classes_val), dtype=int) # turn into numpy array
     classes_index1 = mapping.keys()
     classes_index = np.fromiter(iter(classes_index1), dtype=int) # turn into numpy array
 
+    categorical_labels = to_categorical(classes_index, num_classes=len(classes_index))
+    y_pred_mat=np.zeros((len(y_pred), len(classes_index)))
+    y_true_mat=np.zeros((len(y_pred), len(classes_index)))
+
+    # # one hot encode the true labels and predicted labels
+    # for i in range(len(y_pred)):
+    #     y_pred_mat[i,:] = categorical_labels[:,y_pred[i]]
+    #     y_true_mat[i,:] = categorical_labels[:,y_true[i]]
+
     if normalize:
         c_mat = c_mat.astype('float') / c_mat.sum(axis=1)[:, np.newaxis]
-        print("caculating Normalized confusion matrix")
+        print("Normalized confusion matrix")
     else:
-        print('calculating Confusion matrix, without normalization')
-
-    # print(cm)
+        print('Confusion matrix, without normalization')
+        
+    # print(c_mat)
     plt.figure()
     plt.imshow(c_mat, interpolation='nearest', cmap=cmap)
     frame1 = plt.gca()
-    title='Confusion matrix'
     plt.title(title)
     plt.colorbar()
     tick_marks = np.arange(len(classes))
 
-    plt.xticks(tick_marks[0:-1:4], classes_index[0:-1:4], rotation=45, fontsize=8)
-    plt.yticks(tick_marks[0:-1:4], classes_index[0:-1:4], fontsize=8)
+    plt.xticks(tick_marks[0:-1:4], classes[0:-1:4], rotation=45, fontsize=8)
+    plt.yticks(tick_marks[0:-1:4], classes[0:-1:4], fontsize=8)
+    # plt.xticks(tick_marks[0:-1:4], classes_index[0:-1:4], rotation=45, fontsize=8)
+    # plt.yticks(tick_marks[0:-1:4], classes_index[0:-1:4], fontsize=8)
     # plt.xticks(tick_marks[0:-1:4], rotation=45, fontsize=8)
     # plt.yticks(tick_marks[0:-1:4], fontsize=8)
+
+    # frame1.axes.get_xaxis().set_visible(False)
+    # frame1.axes.get_yaxis().set_visible(False)
+    # frame1.axes.get_xaxis().set_ticks([])
+    # frame1.axes.get_yaxis().set_ticks([])
+
+    # plt.xticks(tick_marks,rotation=45)
+    # plt.yticks(tick_marks)
+    # tick_params(labelsize=6)
 
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-    plt.show()
+    conf_mat_path = "./plots/conf_matrix_" + data_set + "_" + model_name + ".pdf"
+    plt.savefig(conf_mat_path)
+
+    y_pred_path = "./plots/y_pred_" + data_set + "_" + model_name +  ".csv"
+    y_true_path = "./plots/y_true_" + data_set + "_" + model_name +  ".csv"
+    np.savetxt(y_pred_path, y_pred, delimiter=",", fmt="%d")
+    np.savetxt(y_true_path, y_true, delimiter=",", fmt="%d")
+    print("normalized l1 distance between y_true and y_pred:")
+    print (np.linalg.norm((y_true - y_pred), ord=1)/len(y_true))
 
 
-def conf_matrix(model_name, data_set):
-    """
-        please use the conf_matrix.ipynb under plot directory instead
-    """
-    y_pred, y_true = predict_all(model_name, data_set)
-    plot_confusion_matrix(y_true, y_pred, normalize=False)
+
+
+
 
 
 if __name__ == "__main__":
@@ -889,10 +1003,13 @@ if __name__ == "__main__":
     # Found 5009 images belonging to 2 classes.
 
     if args.make_prediction == "yes":
-        target_size = tuple(args.pred_target_size)
-        predict_all(model_name = args.pred_model, data_set = args.pred_dataset, target_size = target_size)
+        # target_size = tuple(args.pred_target_size)
+        y_pred, y_true = predict_all(model_name = args.pred_model, data_set = args.pred_dataset)
+        plot_confusion_matrix(y_true, y_pred, model_name=args.pred_model, data_set=args.pred_dataset)
     else:
         model = train(args)
+        # y_pred, y_true = predict_all(model_name = args.pred_model, data_set = args.pred_dataset, target_size = target_size)
+        # plot_confusion_matrix(y_true, y_pred, data_set=args.pred_dataset, model_name=args.pred_model)
 
 
     # Using TensorFlow backend.

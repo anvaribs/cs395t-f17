@@ -3,7 +3,7 @@ import argparse
 import numpy as np
 
 import requests
-from io import BytesIO
+from io import BytesIO    
 import matplotlib.pyplot as plt
 from skimage.io import imread
 import glob
@@ -18,7 +18,7 @@ import code
 target_size = (299, 299) #fixed size for InceptionV3 architecture 
 
 
-def predict_img(model, img, target_size):
+def predict_img(model, img, target_size, preprocess_input):
   """Run model prediction on a single image
   Args:
     model: keras model

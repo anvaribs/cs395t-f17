@@ -140,7 +140,7 @@ https://coderwall.com/p/ohk6cg/remote-access-to-ipython-notebooks-via-ssh
 ## How ro predict based on a model and a dataset (train or valid)
 1) run the following from the model directory:
 
-python fine-tune.py --make_prediction="yes" --pred_dataset="train" --pred_model="m_2017-10-06_02:10_inceptionv3_categorical_crossentropy_adam_lr0.001_epochs50_regnone_decay0.0_ft.model" --pred_target_size 299 299
+python fine-tune.py --make_prediction="yes" --pred_dataset="train" --pred_model="m_2017-10-06_02:10_inceptionv3_categorical_crossentropy_adam_lr0.001_epochs50_regnone_decay0.0_ft.model"
 
 
 NOTE:
