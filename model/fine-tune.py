@@ -15,7 +15,7 @@ import keras
 from keras.applications import vgg16, vgg19, inception_v3, xception, resnet50, imagenet_utils
 from keras.models import Model
 from keras.models import load_model
-from keras.layers import Dense, GlobalAveragePooling2D, Flatten, GlobalMaxPooling2D
+from keras.layers import Dense, GlobalAveragePooling2D, Flatten, GlobalMaxPooling2D, Dropout
 from keras.preprocessing.image import ImageDataGenerator
 from keras import optimizers
 from keras.optimizers import SGD
@@ -241,7 +241,7 @@ def add_new_last_layer(base_model, nb_classes, FC_SIZE, regularizer, reg_rate):
     inlayer = base_model.input
     x = base_model.output
     
-    if base_model.name != 'vgg16':
+    if (base_model.name != 'vgg16' and base_model.name != 'vgg19' and base_model.name != 'Xception'):
 
 
         # code.interact(local=locals())
@@ -273,11 +273,28 @@ def add_new_last_layer(base_model, nb_classes, FC_SIZE, regularizer, reg_rate):
                       outputs=predictions)  # UserWarning: Update your `Model` call to the Keras 2 API: `Model(inputs=Tensor("in..., outputs=Tensor("de...)`
         # fixed via:  https://github.com/fchollet/keras/issues/7602  , change input= to inputs= , output=  to outputs=
 
-    else:
+    elif base_model.name == 'vgg16':
         # Classification block
-        x = GlobalMaxPooling2D()(x)
+        x = GlobalAveragePooling2D()(x)
         x = Dense(FC_SIZE, activation='relu', name='fc1')(x)
-        x = Dense(FC_SIZE, activation='relu', name='fc2')(x)
+        predictions = Dense(nb_classes, activation='softmax', name='predictions')(x)
+
+        model = Model(inputs=base_model.input,
+                      outputs=predictions)
+
+    elif base_model.name == 'vgg19':
+        x = Flatten()(x)
+        # x = Dense(FC_SIZE, activation="relu")(x)
+        x = Dropout(0.5)(x)
+        x = Dense(FC_SIZE, activation="relu")(x)
+        predictions = Dense(nb_classes, activation="softmax", name='predictions')(x)
+
+        model = Model(inputs=base_model.input,
+                      outputs=predictions)
+
+    elif base_model.name =='Xception':
+        # Classification block
+        x = Dense(FC_SIZE, activation='relu', name='fc1')(x)
         predictions = Dense(nb_classes, activation='softmax', name='predictions')(x)
 
         model = Model(inputs=base_model.input,
@@ -335,7 +352,7 @@ def setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, optimizer_i
     # ing should be done with a very slow learning rate, and typically with the SGD optimizer rather than an
     # adaptative learning rate optimizer such as RMSProp. This is to make sure that the magnitude of the updates stays
     # very small, so as not to wreck the previously learned features.
-    model.compile(optimizer=optimizer_ft, loss=loss_in,
+    model.compile(optimizer=optimizers.sgd(lr=0.0001, momentum=0.9), loss=loss_in,
                   metrics=['acc', 'top_k_categorical_accuracy', mean_L1_distance, min_L1_distance, max_L1_distance])
 
 
@@ -399,7 +416,9 @@ def train(args):
         IM_WIDTH, IM_HEIGHT = 299, 299 
         FC_SIZE = 1024  # should this be 2048 as opposed to 1024.. give it a try
         LAYER_FROM_FREEZE = ''
-        NB_LAYERS_TO_FREEZE = 172
+        # NB_LAYERS_TO_FREEZE = 172
+        # only train the top 2 inception block.
+        NB_LAYERS_TO_FREEZE = 249
         # setup model
         base_model = inception_v3.InceptionV3(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
         # print(base_model.summary())
@@ -407,7 +426,7 @@ def train(args):
 
     if args.model_name == "VGG16":
         IM_WIDTH, IM_HEIGHT = 224, 224
-        FC_SIZE = 4096
+        FC_SIZE = 256
         LAYER_FROM_FREEZE = 'block5_conv1'
         NB_LAYERS_TO_FREEZE = None
         # setup model
@@ -417,12 +436,12 @@ def train(args):
 
 
     if args.model_name == "VGG19":
-        IM_WIDTH, IM_HEIGHT = 224, 224
+        IM_WIDTH, IM_HEIGHT = 171, 186
         FC_SIZE = 256
         LAYER_FROM_FREEZE = 'block5_conv1'
         NB_LAYERS_TO_FREEZE = None
         # setup model
-        base_model = vgg19.VGG19(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
+        base_model = vgg19.VGG19(weights='imagenet', include_top=False, input_shape = (IM_WIDTH, IM_HEIGHT, 3))  # include_top=False excludes final FC layer
         # print(base_model.summary())
         preprocess_input = imagenet_utils.preprocess_input
 
@@ -430,7 +449,7 @@ def train(args):
     if args.model_name == "Xception":
         IM_WIDTH, IM_HEIGHT = 299, 299
         FC_SIZE = 256
-        LAYER_FROM_FREEZE = 'block11_sepconv1_act'
+        LAYER_FROM_FREEZE = 'block13_sepconv1_act'
         NB_LAYERS_TO_FREEZE = None
         # setup model
         base_model = xception.Xception(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
@@ -507,6 +526,8 @@ def train(args):
         class_mode= 'categorical',
         classes=response_classes
     )
+
+
 
     model = add_new_last_layer(base_model, nb_classes, FC_SIZE, args.regularizer, args.reg_rate)
 
@@ -602,6 +623,9 @@ def train(args):
                                              
     #print(results_df)
     #results_df.to_csv("model_results.csv")
+
+
+
 
 
 
@@ -856,6 +880,7 @@ if __name__ == "__main__":
     a.add_argument("--data_dir", default='../data/yearbook')
     a.add_argument("--input_dir", default="train")
     a.add_argument("--valid_dir", default="valid")
+    a.add_argument("--test_dir", default = 'test')
     a.add_argument("--model_name", default="inceptionv3")
     a.add_argument("--train_file", default="yearbook_train.txt")
     a.add_argument("--valid_file", default="yearbook_valid.txt")
