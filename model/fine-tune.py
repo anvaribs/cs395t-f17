@@ -15,7 +15,7 @@ import keras
 from keras.applications import vgg16, vgg19, inception_v3, xception, resnet50, imagenet_utils
 from keras.models import Model
 from keras.models import load_model
-from keras.layers import Dense, GlobalAveragePooling2D, Flatten, GlobalMaxPooling2D
+from keras.layers import Dense, GlobalAveragePooling2D, Flatten, GlobalMaxPooling2D, Dropout
 from keras.preprocessing.image import ImageDataGenerator
 from keras import optimizers
 from keras.optimizers import SGD
