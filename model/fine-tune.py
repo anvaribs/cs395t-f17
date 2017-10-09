@@ -241,7 +241,7 @@ def add_new_last_layer(base_model, nb_classes, FC_SIZE, regularizer, reg_rate):
     inlayer = base_model.input
     x = base_model.output
     
-    if base_model.name != 'vgg16':
+    if (base_model.name != 'vgg16' and base_model.name != 'vgg19'):
 
 
         # code.interact(local=locals())
@@ -273,11 +273,21 @@ def add_new_last_layer(base_model, nb_classes, FC_SIZE, regularizer, reg_rate):
                       outputs=predictions)  # UserWarning: Update your `Model` call to the Keras 2 API: `Model(inputs=Tensor("in..., outputs=Tensor("de...)`
         # fixed via:  https://github.com/fchollet/keras/issues/7602  , change input= to inputs= , output=  to outputs=
 
-    else:
+    elif base_model.name == 'vgg16':
         # Classification block
         x = GlobalAveragePooling2D()(x)
         x = Dense(FC_SIZE, activation='relu', name='fc1')(x)
         predictions = Dense(nb_classes, activation='softmax', name='predictions')(x)
+
+        model = Model(inputs=base_model.input,
+                      outputs=predictions)
+
+    elif base_model.name == 'vgg19':
+        x = Flatten()(x)
+        x = Dense(1024, activation="relu")(x)
+        x = Dropout(0.5)(x)
+        x = Dense(1024, activation="relu")(x)
+        predictions = Dense(nb_classes, activation="softmax", name='predictions')(x)
 
         model = Model(inputs=base_model.input,
                       outputs=predictions)
@@ -416,12 +426,12 @@ def train(args):
 
 
     if args.model_name == "VGG19":
-        IM_WIDTH, IM_HEIGHT = 224, 224
+        IM_WIDTH, IM_HEIGHT = 171, 186
         FC_SIZE = 256
         LAYER_FROM_FREEZE = 'block5_conv1'
         NB_LAYERS_TO_FREEZE = None
         # setup model
-        base_model = vgg19.VGG19(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
+        base_model = vgg19.VGG19(weights='imagenet', include_top=False, input_shape = (IM_WIDTH, IM_HEIGHT, 3))  # include_top=False excludes final FC layer
         # print(base_model.summary())
         preprocess_input = imagenet_utils.preprocess_input
 
