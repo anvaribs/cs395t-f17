@@ -528,13 +528,6 @@ def train(args):
     )
 
 
-    test_generator = test_datagen.flow_from_directory(
-        args.data_dir + "/" + args.test_dir + "/" + 'F',
-        target_size=(IM_WIDTH, IM_HEIGHT),
-        batch_size=batch_size,
-        class_mode='categorical',
-        classes=response_classes
-    )
 
     model = add_new_last_layer(base_model, nb_classes, FC_SIZE, args.regularizer, args.reg_rate)
 
@@ -632,12 +625,6 @@ def train(args):
     #results_df.to_csv("model_results.csv")
 
 
-    results = model.predict_generator(
-        test_generator,
-        steps=100,
-        verbose=1
-    )
-    print(results)
 
 
 
