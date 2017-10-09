@@ -7,7 +7,7 @@ import pdb
 import sys
 import keras
 from keras.models import load_model
-import keras.backend as K 
+
 
 
 SRC_PATH = path.dirname(path.abspath(__file__))
@@ -21,21 +21,6 @@ STREETVIEW_VALID_PATH = path.join(STREETVIEW_PATH, 'valid')
 STREETVIEW_TEST_PATH = path.join(STREETVIEW_PATH, 'test')
 STREETVIEW_TEST_LABEL_PATH = path.join(SRC_PATH, '..', 'output', 'geo_test_label.txt')
 
-
-
-def mean_L1_distance(y_true, y_pred):
-    return K.mean(K.abs(K.argmax(y_pred,axis = -1) - K.argmax(y_true,axis = -1)), axis=-1)
-
-def min_L1_distance(y_true, y_pred):
-    return K.min(K.abs(K.argmax(y_pred,axis = -1) - K.argmax(y_true,axis = -1)), axis=-1)
-
-def max_L1_distance(y_true, y_pred):
-    return K.max(K.abs(K.argmax(y_pred,axis = -1) - K.argmax(y_true,axis = -1)), axis=-1)
-
-def std_L1_distance(y_true, y_pred):
-    return K.std(K.abs(K.argmax(y_pred,axis = -1) - K.argmax(y_true,axis = -1)), axis=-1)
-
-keras.losses.mean_L1_distance = mean_L1_distance
 
 
 def numToRadians(x):
@@ -68,7 +53,6 @@ def dist(lat1, lon1, lat2, lon2):
 # Evaluate L1 distance on valid data for yearbook dataset
 def evaluateYearbook(Predictor):
   test_list = util.listYearbook(False, True)
-  pdb.set_trace()
   predictor = Predictor()
   predictor.DATASET_TYPE = 'yearbook'
   
@@ -101,6 +85,7 @@ def evaluateStreetview(Predictor):
     pred_lat, pred_lon = predictor.predict(image_path)
     truth_lat, truth_lon = float(image_gr_truth[1]), float(image_gr_truth[2])
     l1_dist += dist(pred_lat, pred_lon, truth_lat, truth_lon)
+    pdb.set_trace()
   l1_dist /= total_count
   print( "L1 distance", l1_dist )
   return l1_dist
