@@ -241,7 +241,7 @@ def add_new_last_layer(base_model, nb_classes, FC_SIZE, regularizer, reg_rate):
     inlayer = base_model.input
     x = base_model.output
     
-    if (base_model.name != 'vgg16' and base_model.name != 'vgg19'):
+    if (base_model.name != 'vgg16' and base_model.name != 'vgg19' and base_model.name != 'Xception'):
 
 
         # code.interact(local=locals())
@@ -288,6 +288,14 @@ def add_new_last_layer(base_model, nb_classes, FC_SIZE, regularizer, reg_rate):
         x = Dropout(0.5)(x)
         x = Dense(1024, activation="relu")(x)
         predictions = Dense(nb_classes, activation="softmax", name='predictions')(x)
+
+        model = Model(inputs=base_model.input,
+                      outputs=predictions)
+
+    elif base_model.name =='Xception':
+        # Classification block
+        x = Dense(FC_SIZE, activation='relu', name='fc1')(x)
+        predictions = Dense(nb_classes, activation='softmax', name='predictions')(x)
 
         model = Model(inputs=base_model.input,
                       outputs=predictions)
@@ -344,7 +352,7 @@ def setup_to_finetune(model, LAYER_FROM_FREEZE, NB_LAYERS_TO_FREEZE, optimizer_i
     # ing should be done with a very slow learning rate, and typically with the SGD optimizer rather than an
     # adaptative learning rate optimizer such as RMSProp. This is to make sure that the magnitude of the updates stays
     # very small, so as not to wreck the previously learned features.
-    model.compile(optimizer=optimizer_ft, loss=loss_in,
+    model.compile(optimizer=optimizers.sgd(lr=0.0001, momentum=0.9), loss=loss_in,
                   metrics=['acc', 'top_k_categorical_accuracy', mean_L1_distance, min_L1_distance, max_L1_distance])
 
 
@@ -408,7 +416,9 @@ def train(args):
         IM_WIDTH, IM_HEIGHT = 299, 299 
         FC_SIZE = 1024  # should this be 2048 as opposed to 1024.. give it a try
         LAYER_FROM_FREEZE = ''
-        NB_LAYERS_TO_FREEZE = 172
+        # NB_LAYERS_TO_FREEZE = 172
+        # only train the top 2 inception block.
+        NB_LAYERS_TO_FREEZE = 249
         # setup model
         base_model = inception_v3.InceptionV3(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
         # print(base_model.summary())
@@ -439,7 +449,7 @@ def train(args):
     if args.model_name == "Xception":
         IM_WIDTH, IM_HEIGHT = 299, 299
         FC_SIZE = 256
-        LAYER_FROM_FREEZE = 'block11_sepconv1_act'
+        LAYER_FROM_FREEZE = 'block13_sepconv1_act'
         NB_LAYERS_TO_FREEZE = None
         # setup model
         base_model = xception.Xception(weights='imagenet', include_top=False)  # include_top=False excludes final FC layer
