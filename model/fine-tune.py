@@ -284,9 +284,9 @@ def add_new_last_layer(base_model, nb_classes, FC_SIZE, regularizer, reg_rate):
 
     elif base_model.name == 'vgg19':
         x = Flatten()(x)
-        x = Dense(1024, activation="relu")(x)
+        # x = Dense(FC_SIZE, activation="relu")(x)
         x = Dropout(0.5)(x)
-        x = Dense(1024, activation="relu")(x)
+        x = Dense(FC_SIZE, activation="relu")(x)
         predictions = Dense(nb_classes, activation="softmax", name='predictions')(x)
 
         model = Model(inputs=base_model.input,
