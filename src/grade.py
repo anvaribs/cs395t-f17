@@ -1,8 +1,14 @@
 from __future__ import print_function
 from os import path
-from math import sin, cos, atan2, sqrt, pi
+from math import sin, cos, atan2, sqrt#, pik
 from run import *
 from util import *
+import pdb
+import sys
+import keras
+from keras.models import load_model
+import keras.backend as K 
+
 
 SRC_PATH = path.dirname(path.abspath(__file__))
 DATA_PATH = path.join(SRC_PATH, '..', 'data')
@@ -14,6 +20,23 @@ STREETVIEW_PATH = path.join(DATA_PATH, 'geo')
 STREETVIEW_VALID_PATH = path.join(STREETVIEW_PATH, 'valid')
 STREETVIEW_TEST_PATH = path.join(STREETVIEW_PATH, 'test')
 STREETVIEW_TEST_LABEL_PATH = path.join(SRC_PATH, '..', 'output', 'geo_test_label.txt')
+
+
+
+def mean_L1_distance(y_true, y_pred):
+    return K.mean(K.abs(K.argmax(y_pred,axis = -1) - K.argmax(y_true,axis = -1)), axis=-1)
+
+def min_L1_distance(y_true, y_pred):
+    return K.min(K.abs(K.argmax(y_pred,axis = -1) - K.argmax(y_true,axis = -1)), axis=-1)
+
+def max_L1_distance(y_true, y_pred):
+    return K.max(K.abs(K.argmax(y_pred,axis = -1) - K.argmax(y_true,axis = -1)), axis=-1)
+
+def std_L1_distance(y_true, y_pred):
+    return K.std(K.abs(K.argmax(y_pred,axis = -1) - K.argmax(y_true,axis = -1)), axis=-1)
+
+keras.losses.mean_L1_distance = mean_L1_distance
+
 
 def numToRadians(x):
   return x / 180.0 * pi
@@ -45,9 +68,10 @@ def dist(lat1, lon1, lat2, lon2):
 # Evaluate L1 distance on valid data for yearbook dataset
 def evaluateYearbook(Predictor):
   test_list = util.listYearbook(False, True)
+  pdb.set_trace()
   predictor = Predictor()
   predictor.DATASET_TYPE = 'yearbook'
-
+  
   total_count = len(test_list)
   l1_dist = 0.0
   print( "Total validation data", total_count )
