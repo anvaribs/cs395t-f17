@@ -527,6 +527,15 @@ def train(args):
         classes=response_classes
     )
 
+
+    test_generator = test_datagen.flow_from_directory(
+        args.data_dir + "/" + args.test_dir + "/" + 'F',
+        target_size=(IM_WIDTH, IM_HEIGHT),
+        batch_size=batch_size,
+        class_mode='categorical',
+        classes=response_classes
+    )
+
     model = add_new_last_layer(base_model, nb_classes, FC_SIZE, args.regularizer, args.reg_rate)
 
     # transfer learning
@@ -621,6 +630,15 @@ def train(args):
                                              
     #print(results_df)
     #results_df.to_csv("model_results.csv")
+
+
+    results = model.predict_generator(
+        test_generator,
+        steps=100,
+        verbose=1
+    )
+    print(results)
+
 
 
 
@@ -875,6 +893,7 @@ if __name__ == "__main__":
     a.add_argument("--data_dir", default='../data/yearbook')
     a.add_argument("--input_dir", default="train")
     a.add_argument("--valid_dir", default="valid")
+    a.add_argument("--test_dir", default = 'test')
     a.add_argument("--model_name", default="inceptionv3")
     a.add_argument("--train_file", default="yearbook_train.txt")
     a.add_argument("--valid_file", default="yearbook_valid.txt")
