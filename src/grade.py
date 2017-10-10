@@ -85,7 +85,7 @@ def evaluateStreetview(Predictor):
     pred_lat, pred_lon = predictor.predict(image_path)
     truth_lat, truth_lon = float(image_gr_truth[1]), float(image_gr_truth[2])
     l1_dist += dist(pred_lat, pred_lon, truth_lat, truth_lon)
-    pdb.set_trace()
+    #pdb.set_trace()
   l1_dist /= total_count
   print( "L1 distance", l1_dist )
   return l1_dist
