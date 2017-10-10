@@ -816,7 +816,8 @@ def predict_all(model_name, data_set):
         # img2 = imread(full_path)
         img = Image.open(full_path_img)  # we need to read the image using PIL.Image
         y_pred[i] = np.argmax(predict_img(model, img, (IM_HEIGHT, IM_WIDTH), preprocess_input))
-        y_true[i] = inverse_mapping[label]
+        y_true[i] = inverse_mapping[int(label)]
+        pdb.set_trace()
 
     y_pred_path = "./plots/y_pred_" + data_set + ".csv"
     y_true_path = "./plots/y_true_" + data_set + ".csv"
