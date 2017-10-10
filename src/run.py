@@ -165,7 +165,6 @@ class Predictor:
 		# depending on the dataset you are using
 
 		# need to import model-name here again
-		model_name = "m_2017-10-06_02:10_inceptionv3_categorical_crossentropy_adam_lr0.001_epochs50_regnone_decay0.0_ft.model"
 		# Read target_size and preprocess_input 
 		if "inceptionv3" in model_name:
 		    IM_WIDTH, IM_HEIGHT = 299, 299 
@@ -193,11 +192,7 @@ class Predictor:
 		elif self.DATASET_TYPE == 'yearbook':
 			# FRZN: the below line corresponding to baseline has been commented out
 			# result = self.yearbook_baseline() #for yearbook
-			y_pred_hot = predict_img(self.model, img, self.target_size, preprocess_input)
+			y_pred_hot = predict_img(self.model, img, (IM_HEIGHT, IM_WIDTH), preprocess_input)
 			y_pred_year = mapping[np.argmax(y_pred_hot)]
 			result = [y_pred_year]
 		return result
-		
-	
-
-
