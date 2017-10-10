@@ -123,12 +123,12 @@ class Predictor:
 	DATASET_TYPE = 'yearbook'
 
 	# FRZN: load the module here for the whole class to avoid loading it for every prediction
-	# model_name = "best_model_so_far_VGG16.hdf5"
-	model_name = "m_2017-10-09_15:51_VGG16_ultimate_loss_function_sgd_lr0.0001_epochs20_regnone_decay0.0_ft.model"
+	model_name = "best_model_so_far_VGG16.hdf5"
+	#model_name = "m_2017-10-09_15:51_VGG16_ultimate_loss_function_sgd_lr0.0001_epochs20_regnone_decay0.0_ft.model"
 	print ("loading model ....")
 	model = load_model("../model/fitted_models/" + model_name)
 	print ("model loaded")
-	pdb.set_trace()
+	#pdb.set_trace()
 
 	# baseline 1 which calculates the median of the train data and return each time
 	def yearbook_baseline(self):
@@ -166,23 +166,23 @@ class Predictor:
 
 		# need to import model-name here again
 		# Read target_size and preprocess_input 
-		if "inceptionv3" in model_name:
+		if "inceptionv3" in self.model_name:
 		    IM_WIDTH, IM_HEIGHT = 299, 299 
 		    preprocess_input = inception_v3.preprocess_input
 
-		if "VGG16" in model_name:
+		if "VGG16" in self.model_name:
 		    IM_WIDTH, IM_HEIGHT = 224, 224
 		    preprocess_input = imagenet_utils.preprocess_input
 
-		if "VGG19" in model_name:
+		if "VGG19" in self.model_name:
 		    IM_WIDTH, IM_HEIGHT = 224, 224
 		    preprocess_input = imagenet_utils.preprocess_input
 
-		if "Xception" in model_name:
+		if "Xception" in self.model_name:
 		    IM_WIDTH, IM_HEIGHT = 299, 299
 		    preprocess_input = xception.preprocess_input
 
-		if "ResNet50" in model_name:
+		if "ResNet50" in self.model_name:
 		    IM_WIDTH, IM_HEIGHT = 224, 224
 		    preprocess_input = resnet50.preprocess_input
 
