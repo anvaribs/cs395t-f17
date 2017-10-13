@@ -1,5 +1,7 @@
-# Yearbook/ Geolocation
-This is a starter for implementing yearbook or geolocation project.
+# Yearbook
+cs395t project1: implementing yearbook project.  More information at: http://www.philkr.net/cs395t/project1/
+Report in report.pdf
+Short presentation in cs395t-F17-proj1-Amin\_Diego\_Farzan.pdf
 
 ## Dependencies
  * python (tested with python2.7)
@@ -25,27 +27,13 @@ data
 		yearbook_train.txt
 		yearbook_valid.txt
 		yearbook_test.txt
-	geo
-		train
-			000001.JPG
-			...
-		valid
-			...
-		test
-			...
-		geo_train.txt
-		geo_valid.txt
-		geo_test.txt
 model
-	TODO: put your final model file in the folder
+	model source code and final model
 src
-	TODO: modify load and predict function in run.py
 	grade.py
 	run.py
 	util.py
 output
-	TODO: output the yearbook/geo test file
-	geo_test_label.txt
 	yearbook_test_label.txt
 ```
 
@@ -63,20 +51,10 @@ It will give the result based on the baseline 1 which is the median of the train
 cd src &&  python grade.py --DATASET_TYPE=yearbook --type=valid
 ```
 
-2. For Geolocation validation data
-```
-cd src &&  python grade.py --DATASET_TYPE=geolocation --type=valid
-```
-
 ### Generating Test Label for project submission
 1. For yearbook testing data
 ```
 cd src &&  python grade.py --DATASET_TYPE=yearbook --type=test
-```
-
-2. For Geolocation testing data
-```
-cd src &&  python grade.py --DATASET_TYPE=geolocation --type=test
 ```
 
 ## Submission
