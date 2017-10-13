@@ -1,13 +1,15 @@
 # Yearbook
-cs395t project1: implementing yearbook project.  More information at: http://www.philkr.net/cs395t/project1/
-Report in report.pdf
-Short presentation in cs395t-F17-proj1-Amin\_Diego\_Farzan.pdf
+cs395t project1: implementing yearbook project.  
+  * More information at: http://www.philkr.net/cs395t/project1/
+  * Report in report.pdf
+  * Short presentation in cs395t-F17-proj1-Amin\_Diego\_Farzan.pdf
 
 ## Dependencies
- * python (tested with python2.7)
+ * python (tested with python3.5)
  * numpy
  * sklearn
  * matplotlib + basemap
+ * keras
 
 # Project Folder Structure
 ```
@@ -105,14 +107,6 @@ screen -r diego395   #to get back to screen session to check on process
 nvidia-smi  # to see gpu usage on microdeep
 top         # to see cpu usage on microdeep
 
-
-
-12) port forwarding on microdeep
-
-https://coderwall.com/p/ohk6cg/remote-access-to-ipython-notebooks-via-ssh
-- ON MICRODEEP:    ipython notebook --no-browser --port=8890
-- ON LAPTOP: ssh -N -p 52617 -f -L localhost:8891:localhost:8890 farzan15@microdeep.ece.utexas.edu
-- ON LAPTOP CHROME BROWSER:  localhost:8891
 
 
 ## How ro predict based on a model and a dataset (train or valid)
